@@ -4418,6 +4418,48 @@ Ext.define('NAT.panel.query.Grid', {
     }
 });
 
+Ext.define('NAT.toolbar.Command', {
+    extend: 'Ext.toolbar.Toolbar',
+    alias: 'widget.natcommandtoolbar',
+
+    mixins: {
+        bindable: 'Ext.util.Bindable'
+    },
+
+    initComponent : function(){
+        var me = this;
+
+        this.callParent(arguments);
+
+        if (this.designMode) return;
+
+        //me.bindStore(me.store || 'ext-empty-store', true);kell a currentchange miatt
+
+        this.down('#btnNew').on('click', this.btnNew_click, this);
+        this.down('#btnDelete').on('click', this.btnDelete_click, this);
+    },
+
+    btnNew_click: function() {
+        console.log('new');
+    },
+
+    btnDelete_click: function() {
+        console.log('delete');
+    }
+
+//    getStoreListeners: function() {
+//        return {
+//            beforeload: this.beforeLoad,
+//            load: this.onLoad,
+//            exception: this.onLoadError
+//        };
+//    },
+
+//    bindStore: function(store) {
+//        this.bindStore(store);
+//    }
+});
+
 Ext.define('NAT.tree.Panel', {
     extend: 'Ext.tree.Panel',
     alias: 'widget.nattree',
