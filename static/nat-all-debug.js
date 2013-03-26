@@ -1007,8 +1007,6 @@ Ext.define('NAT.form.field.Lookup', {
         loadMask: false, //a loadmask nem tunik el, a masodik store load utan!
         width: 400 //for multicolumn combo, set matchFieldWidth to false!
     },
-//        deferredBind: false,
-//        deferredBindStore: null,
 
     initComponent: function () {
         this.callParent(arguments);
