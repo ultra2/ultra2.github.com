@@ -1970,7 +1970,7 @@ Ext.define('natjs.overrides.app.Application', {
             Ext.Ajax.on('requestexception', Ext.getBody().unmask , Ext.getBody());
         },
 
-        natCreateModel: function(model, config) {
+        natCreateModel: function(model, config, keepEditing) {
             config = config || {};
             var className = '';
 
@@ -1989,6 +1989,10 @@ Ext.define('natjs.overrides.app.Application', {
             for (var i = 0; i < m.associations.length; i++) {
                 var association = m.associations.items[i];
                 association.Created(m);
+            }
+
+            if (!keepEditing){
+                m.endEdit();
             }
 
             return m;
@@ -4080,7 +4084,6 @@ Ext.define('NAT.panel.persistent.Form', {
         this.down('#btnClose').setVisible(false);
 
         var model = app.natCreateModel(this.model);
-        model.endEdit(true);
         this.store.setModel(model);
     },
 
@@ -4188,7 +4191,6 @@ Ext.define('NAT.panel.persistent.Grid', {
     btnNew_click: function(){
         if (!this.model) return;
         var newModel = app.natCreateModel(this.model);
-        newModel.endEdit();
         this.store.add(newModel);
     },
 
@@ -4268,9 +4270,7 @@ Ext.define('NAT.panel.persistent.Tree', {
             },
             function(result, cb){
                 var parent = tree.getSelected() || me.store.getRootNode();
-                var newModel = app.natCreateModel(me.model);
-                newModel.set('loaded', true);
-                newModel.endEdit();
+                var newModel = app.natCreateModel(me.model, { loaded: true });
                 parent.appendChild(newModel);
                 me.saveRefresh(null, cb, me);
             }
@@ -4300,10 +4300,7 @@ Ext.define('NAT.panel.persistent.Tree', {
             Ext.callback(callback, scope, [null, null], 0);
             return;
         }
-        var root = app.natCreateModel(this.model);
-        root.set('name', 'root');
-        root.set('loaded', true);
-        root.endEdit();
+        var root = app.natCreateModel(this.model, { name: 'root', loaded: true });
         this.store.setRootNode(root);
         this.saveRefresh(null, callback, scope);
     },
@@ -5942,7 +5939,6 @@ Ext.define('NAT.data.Store', {
 
     createNew: function(){
         var model = app.natCreateModel(this.model);
-        model.endEdit();
         this.add(model);
         this.Select(model);
     },
