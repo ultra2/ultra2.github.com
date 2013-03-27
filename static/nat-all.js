@@ -705,7 +705,7 @@ Ext.define('NAT.form.field.ComboBox', {
                        //todo: override combobox's doQuery function to preserve our filter
     },
 
-    BindStore: function(store) {
+    bindStore: function(store) {
         this.bindStore(store);
     },
 
@@ -1011,7 +1011,6 @@ Ext.define('NAT.form.field.Lookup', {
     initComponent: function () {
         this.callParent(arguments);
         this.on('beforequery', this.this_beforequery, this);
-//            this.on('afterrender', this.this_afterrender, this);
     },
 
     this_beforequery: function() {
@@ -1020,29 +1019,11 @@ Ext.define('NAT.form.field.Lookup', {
                       //todo: override combobox's doQuery function to preserve our filter
     },
 
-//        this_afterrender: function() {
-//            if (this.deferredBind) {
-//                this.bindStore(this.deferredBindStore);
-//                this.deferredBind = false;
-//                this.deferredBindStore = null;
-//            }
-//        },
-
     renderer: function(value, rec){
         if (!this.store) return value;
         var lookupModel = this.store.getById(value);
         if (!lookupModel) return value;
         return lookupModel.get(this.displayField);
-    },
-
-    BindStore: function(store) {
-        this.bindStore(store);
-//            if (this.IsVisible()) {
-//                this.bindStore(store);
-//            } else {
-//                this.deferredBind = true;
-//                this.deferredBindStore = store;
-//            }
     },
 
     hasErrors: function() {
@@ -1769,7 +1750,7 @@ Ext.define('NAT.grid.column.Lookup', {
         }
     },
 
-    BindStore: function(store) {
+    bindStore: function(store) {
         this.getEditor().bindStore(store);
         this.fireEvent('bindstore', this, store);
     }
@@ -4498,13 +4479,9 @@ Ext.define('NAT.tree.Panel', {
     alias: 'widget.nattree',
     requires: ['NAT.tree.plugin.CellEditing'],
 
-    deferredBind: false,
-    deferredBindStore: null,
-
     animate: false,
 
     constructor: function (config) {
-        //config.plugins = [Ext.create('NAT.tree.plugin.CellEditing', { clicksToEdit: 1 })];
         this.callParent([config]);
         return this;
     },
@@ -4516,15 +4493,9 @@ Ext.define('NAT.tree.Panel', {
 
         this.callParent(arguments);
 
-        this.on('beforedeselect', this.tree_beforedeselect, this);
         this.on('select', this.tree_select, this);
         this.on('deselect', this.tree_deselect, this);
         this.on('afterrender', this.tree_afterrender, this);
-    },
-
-    tree_beforedeselect: function (rowModel, model) {
-//        var plugin = this.getPlugin();
-//        plugin.completeEdit();
     },
 
     tree_select: function (rowModel, model) {
@@ -4537,22 +4508,14 @@ Ext.define('NAT.tree.Panel', {
         this.store.Deselect();
     },
 
-    tree_afterrender: function() {
-        if (this.deferredBind) {
-            this.bindStore(this.deferredBindStore);
-            this.deferredBind = false;
-            this.deferredBindStore = null;
-        }
-    },
-
-    BindStore: function(store) {
-        if (this.IsVisible()) {
-            this.bindStore(store);
-        } else {
-            this.deferredBind = true;
-            this.deferredBindStore = store;
-        }
-    },
+//    bindStore: function(store) {
+//        if (this.IsVisible()) {
+//            this.bindStore(store);
+//        } else {
+//            this.deferredBind = true;
+//            this.deferredBindStore = store;
+//        }
+//    },
 
     bindStore: function(store) {
         if (!store) return;
