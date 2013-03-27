@@ -4432,8 +4432,8 @@ Ext.define('NAT.toolbar.Command', {
     initComponent : function(){
         var me = this;
 
-        var dataStore = this.dataStore;
-        this.dataStore = null;
+        var dataStore = this.store;
+        this.store = null;
         var dataMember = this.dataMember;
         this.dataMember = null;
 
