@@ -1493,7 +1493,7 @@ Ext.define('NAT.form.Panel', {
         }
     },
 
-    BindStore: function(store) {
+    bindStore: function(store) {
         this.store = store;
         this.InitBinding();
     },
@@ -1642,8 +1642,8 @@ Ext.define('NAT.form.Panel', {
                 this.isChanging = false;
                 continue;
             }
-            if (typeof child.BindStore == 'function'){
-                child.BindStore(this.store.currModel[child.propertyPath]);
+            if (typeof child.bindStore == 'function'){
+                child.bindStore(this.store.currModel[child.propertyPath]);
             }
         }
     },
