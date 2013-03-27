@@ -4446,7 +4446,6 @@ Ext.define('NAT.toolbar.Command', {
     },
 
     this_afterRender: function(){
-        debugger;
         var dataStore = this.dataStore;
         this.dataStore = null;
         this.bindStore(dataStore, this.dataMember);
@@ -4464,20 +4463,17 @@ Ext.define('NAT.toolbar.Command', {
 
         if (Ext.isString(this.dataStore)){
             debugger;
-            var natpanel = this.findParentBy(function(parent){
-                return parent.isXType('natpanel');
-            });
+            //local store?
+            var natpanel = this.up('natpanel');
+            if (natpanel){
+                this.dataStore = natpanel.stores.getByKey(this.dataStore);
+            }
 
-            this.dataStore = natpanel.stores.getByKey(this.dataStore);
-
+            //global store?
             if (!this.dataStore){
                 this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
             }
         }
-
-//        if (Ext.isString(this.dataStore) && this.isContained && this.isContained.stores){
-//            this.dataStore = this.isContained.stores.getByKey(this.dataStore);
-//        }
 
         if (this.dataStore && this.dataMember) {
             this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
