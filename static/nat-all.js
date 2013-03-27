@@ -1805,31 +1805,17 @@ Ext.define('NAT.grid.Panel', {
     dataStore: null,
     dataMember: null,
 
-//    deferredBind: false,
-//    deferredBindDataStore: null,
-//    deferredBindDataMember: null,
-
-    constructor: function (config) {
-        //config.plugins = [Ext.create('Ext.grid.plugin.CellEditing', { clicksToEdit: 1 })];
-        this.callParent([config]);
-        return this;
-    },
-
     initComponent: function () {
         this.viewConfig = Ext.applyIf(this.viewConfig || {}, {
             loadMask: false //if true after refreshing the store grid rows cant be selected
         });
 
-        var dataStore = this.store;
+        this.dataStore = this.store;
         this.store = null;
-        var dataMember = this.dataMember;
-        this.dataMember = null;
 
         this.callParent(arguments); //use empty store from Ext.data.StoreManager
 
         if (this.designMode) return;
-
-        this.bindStore(dataStore, dataMember);
 
         for (var i = 0; this.columns.length > i; i++) {
             var column = this.columns[i];
@@ -1838,29 +1824,17 @@ Ext.define('NAT.grid.Panel', {
             }
         }
 
+        this.on('afterrender', this.this_afterRender, this, {single: true});
         this.on('select', this.this_select, this);
         this.on('deselect', this.this_deselect, this);
 //        this.on('afterrender', this.this_afterrender, this);
     },
 
-    this_select: function (rowModel, model) {
-        if (!this.store) return;
-        this.store.Select(model);
+    this_afterRender: function(){
+        var dataStore = this.dataStore;
+        this.dataStore = null;
+        this.bindStore(dataStore, this.dataMember);
     },
-
-    this_deselect: function (rowModel, model) {
-        if (!this.store) return;
-        this.store.Deselect();
-    },
-
-//    this_afterrender: function() {
-//        if (this.deferredBind) {
-//            this.bindStore(this.deferredBindDataStore, this.deferredBindDataMember);
-//            this.deferredBind = false;
-//            this.deferredBindDataStore = null;
-//            this.deferredBindDataMember = null;
-//        }
-//    },
 
     //overriden from Ext.panel.Table
     bindStore: function(dataStore, dataMember) {
@@ -1870,18 +1844,19 @@ Ext.define('NAT.grid.Panel', {
             this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
         }
 
-//        if (!this.IsVisible()) {
-//            this.deferredBind = true;
-//            this.deferredBindDataStore = dataStore;
-//            this.deferredBindDataMember = dataMember;
-//            return;
-//        }
-
         this.dataStore = dataStore;
         this.dataMember = dataMember;
 
-        if (Ext.isString(this.dataStore) && this.isContained && this.isContained.stores){
-            this.dataStore = this.isContained.stores.getByKey(this.dataStore);
+        if (Ext.isString(this.dataStore)){
+            //local store?
+            var natpanel = this.up('natpanel');
+            if (natpanel){
+                this.dataStore = natpanel.stores.getByKey(this.dataStore);
+            }
+            //global store?
+            if (!this.dataStore){
+                this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+            }
         }
 
         if (this.dataStore && this.dataMember) {
@@ -1895,6 +1870,16 @@ Ext.define('NAT.grid.Panel', {
 
     dataStore_currentmodelchanged: function(currModel){
         this.superclass.bindStore.call(this, currModel['hasMany_' + this.dataMember]);
+    },
+
+    this_select: function (rowModel, model) {
+        if (!this.store) return;
+        this.store.Select(model);
+    },
+
+    this_deselect: function (rowModel, model) {
+        if (!this.store) return;
+        this.store.Deselect();
     },
 
     luColumn_bindstore: function(column, store) {
@@ -4468,7 +4453,6 @@ Ext.define('NAT.toolbar.Command', {
             if (natpanel){
                 this.dataStore = natpanel.stores.getByKey(this.dataStore);
             }
-
             //global store?
             if (!this.dataStore){
                 this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
@@ -4489,13 +4473,13 @@ Ext.define('NAT.toolbar.Command', {
     },
 
     btnNew_click: function() {
-        debugger;
         var store = this.getStore();
-        console.log('new');
+        if (store) store.createNew();
     },
 
     btnDelete_click: function() {
-        console.log('delete');
+        var store = this.getStore();
+        if (store) store.removeCurrent();
     }
 
 //    getStoreListeners: function() {
@@ -5646,11 +5630,6 @@ Ext.define('NAT.data.Store', {
         this.on('datachanged', this.updateCurrModel, this);
     },
 
-    removeAll: function(silent) {
-        this.callParent(arguments);
-        this.Select(null);
-    },
-
     getNewRecords: function() {
         return this.data.filterBy(this.filterNew).items;
     },
@@ -5958,6 +5937,22 @@ Ext.define('NAT.data.Store', {
         this.remove(record);
         this.fireEvent('remove', this, record, index);
         this.fireEvent('datachanged', this);
+    },
+
+    createNew: function(){
+        var model = app.createModel(this.collection);
+        this.Select(model);
+    },
+
+    removeCurrent: function(){
+        if (!this.currModel) return;
+        this.remove(this.currModel);
+        this.updateCurrModel();
+    },
+
+    removeAll: function(silent) {
+        this.callParent(arguments);
+        this.Select(null);
     },
 
     updateCurrModel: function() {
