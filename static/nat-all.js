@@ -4457,9 +4457,22 @@ Ext.define('NAT.toolbar.Command', {
         this.dataStore = dataStore;
         this.dataMember = dataMember;
 
-        if (Ext.isString(this.dataStore) && this.isContained && this.isContained.stores){
-            this.dataStore = this.isContained.stores.getByKey(this.dataStore);
+        if (Ext.isString(this.dataStore)){
+            debugger;
+            var natpanel = this.findParentBy(function(parent){
+                return parent.isXType('natpanel');
+            });
+
+            this.dataStore = natpanel.stores.getByKey(this.dataStore);
+
+            if (!this.dataStore){
+                this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+            }
         }
+
+//        if (Ext.isString(this.dataStore) && this.isContained && this.isContained.stores){
+//            this.dataStore = this.isContained.stores.getByKey(this.dataStore);
+//        }
 
         if (this.dataStore && this.dataMember) {
             this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
