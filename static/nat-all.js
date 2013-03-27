@@ -1869,7 +1869,8 @@ Ext.define('NAT.grid.Panel', {
     },
 
     dataStore_currentmodelchanged: function(currModel){
-        this.superclass.bindStore.call(this, currModel['hasMany_' + this.dataMember]);
+        var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+        this.superclass.bindStore.call(this, store);
     },
 
     this_select: function (rowModel, model) {
@@ -4468,7 +4469,8 @@ Ext.define('NAT.toolbar.Command', {
     },
 
     dataStore_currentmodelchanged: function(currModel){
-        this.mixins.bindable.bindStore.call(this, currModel['hasMany_' + this.dataMember]);
+        var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+        this.mixins.bindable.bindStore.call(this, store);
     },
 
     btnNew_click: function() {
