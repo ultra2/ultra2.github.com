@@ -4480,12 +4480,12 @@ Ext.define('NAT.toolbar.Command', {
         }
 
         if (this.dataStore && !this.dataMember) {
-            this.callParent([this.dataStore]);
+            this.mixins.bindable.bindStore([this.dataStore]);
         }
     },
 
     dataStore_currentmodelchanged: function(currModel){
-        this.superclass.bindStore.call(this, currModel['hasMany_' + this.dataMember]);
+        this.mixins.bindable.bindStore.call(this, currModel['hasMany_' + this.dataMember]);
     },
 
     btnNew_click: function() {
