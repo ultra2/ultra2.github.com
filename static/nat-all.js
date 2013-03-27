@@ -4447,7 +4447,6 @@ Ext.define('NAT.toolbar.Command', {
         this.dataMember = dataMember;
 
         if (Ext.isString(this.dataStore)){
-            debugger;
             //local store?
             var natpanel = this.up('natpanel');
             if (natpanel){
@@ -5940,7 +5939,8 @@ Ext.define('NAT.data.Store', {
     },
 
     createNew: function(){
-        var model = app.natCreateModel(this.collection);
+        debugger;
+        var model = app.natCreateModel(this.model);
         this.add(model);
         this.Select(model);
     },
