@@ -1823,7 +1823,7 @@ Ext.define('NAT.grid.Panel', {
         var dataStore = this.store;
         this.store = null;
         var dataMember = this.dataMember;
-        this.dataMember = '';
+        this.dataMember = null;
 
         this.callParent(arguments); //use empty store from Ext.data.StoreManager
 
@@ -4426,20 +4426,57 @@ Ext.define('NAT.toolbar.Command', {
         bindable: 'Ext.util.Bindable'
     },
 
+    dataStore: null,
+    dataMember: null,
+
     initComponent : function(){
         var me = this;
+
+        var dataStore = this.dataStore;
+        this.dataStore = null;
+        var dataMember = this.dataMember;
+        this.dataMember = null;
 
         this.callParent(arguments);
 
         if (this.designMode) return;
 
-        //me.bindStore(me.store || 'ext-empty-store', true);kell a currentchange miatt
+        this.bindStore(dataStore, dataMember);
 
         this.down('#btnNew').on('click', this.btnNew_click, this);
         this.down('#btnDelete').on('click', this.btnDelete_click, this);
     },
 
+    bindStore: function(dataStore, dataMember) {
+        if (dataStore == this.dataStore && dataMember == dataMember) return;
+
+        if (this.dataStore && this.dataMember) {
+            this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+        }
+
+        this.dataStore = dataStore;
+        this.dataMember = dataMember;
+
+        if (Ext.isString(this.dataStore) && this.isContained && this.isContained.stores){
+            this.dataStore = this.isContained.stores.getByKey(this.dataStore);
+        }
+
+        if (this.dataStore && this.dataMember) {
+            this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+        }
+
+        if (this.dataStore && !this.dataMember) {
+            this.callParent([this.dataStore]);
+        }
+    },
+
+    dataStore_currentmodelchanged: function(currModel){
+        this.superclass.bindStore.call(this, currModel['hasMany_' + this.dataMember]);
+    },
+
     btnNew_click: function() {
+        debugger;
+        var store = this.getStore();
         console.log('new');
     },
 
