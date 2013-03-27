@@ -4495,7 +4495,6 @@ Ext.define('NAT.tree.Panel', {
 
         this.on('select', this.tree_select, this);
         this.on('deselect', this.tree_deselect, this);
-        this.on('afterrender', this.tree_afterrender, this);
     },
 
     tree_select: function (rowModel, model) {
