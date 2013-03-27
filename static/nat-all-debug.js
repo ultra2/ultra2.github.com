@@ -5940,7 +5940,7 @@ Ext.define('NAT.data.Store', {
     },
 
     createNew: function(){
-        var model = app.createModel(this.collection);
+        var model = app.natCreateModel(this.collection);
         this.Select(model);
     },
 
