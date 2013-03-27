@@ -4432,19 +4432,24 @@ Ext.define('NAT.toolbar.Command', {
     initComponent : function(){
         var me = this;
 
-        var dataStore = this.store;
+        this.dataStore = this.store;
         this.store = null;
-        var dataMember = this.dataMember;
-        this.dataMember = null;
 
         this.callParent(arguments);
 
         if (this.designMode) return;
 
-        this.bindStore(dataStore, dataMember);
+        this.on('afterrender', this.this_afterRender, this, {single: true});
 
         this.down('#btnNew').on('click', this.btnNew_click, this);
         this.down('#btnDelete').on('click', this.btnDelete_click, this);
+    },
+
+    this_afterRender: function(){
+        debugger;
+        var dataStore = this.dataStore;
+        this.dataStore = null;
+        this.bindStore(dataStore, this.dataMember);
     },
 
     bindStore: function(dataStore, dataMember) {
