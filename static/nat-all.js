@@ -5941,6 +5941,7 @@ Ext.define('NAT.data.Store', {
 
     createNew: function(){
         var model = app.natCreateModel(this.collection);
+        this.add(model);
         this.Select(model);
     },
 
