@@ -1974,7 +1974,7 @@ Ext.define('natjs.overrides.app.Application', {
             var className = '';
 
             if (Ext.isString(model)) className = model;
-            else if (Ext.isFunction(model)) className = model.$className;
+            else if (Ext.isFunction(model)) className = this.GetModelNameWithoutNamespace(model.$className);
 
             if (className == '') return null;
 
