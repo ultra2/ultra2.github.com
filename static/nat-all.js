@@ -705,10 +705,6 @@ Ext.define('NAT.form.field.ComboBox', {
                        //todo: override combobox's doQuery function to preserve our filter
     },
 
-    bindStore: function(store) {
-        this.bindStore(store);
-    },
-
     hasErrors: function() {
         return ((this.activeErrors) && (this.activeErrors.length > 0));
     }
