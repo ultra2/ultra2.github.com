@@ -5939,7 +5939,6 @@ Ext.define('NAT.data.Store', {
     },
 
     createNew: function(){
-        debugger;
         var model = app.natCreateModel(this.model);
         this.add(model);
         this.Select(model);
