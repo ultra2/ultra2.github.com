@@ -3915,19 +3915,23 @@ Ext.define('natjs.overrides.String', {
 }, function() {
 
     Ext.String.startsWith = function (str, value){
+        if (!str) return false;
         return str.slice(0, value.length) == value;
     };
 
     Ext.String.endsWith = function (str, value){
+        if (!str) return false;
         return str.slice(-value.length) == value;
     };
 
     Ext.String.removeFromStart = function (str, value){
+        if (!str) return str;
         if (!Ext.String.startsWith(str, value)) return str;
         return str.slice(value.length);
     };
 
     Ext.String.removeFromEnd = function (str, value){
+        if (!str) return str;
         if (!Ext.String.endsWith(str, value)) return str;
         return str.slice(0, str.length - value.length);
     };
@@ -6191,9 +6195,9 @@ Ext.define('NAT.data.TreeStore', {
         }
     },
 
-    remove: function (model) {
+    remove: function (model, destroy) {
         if (!model.parentNode) return;
-        model.parentNode.removeChild(model);
+        model.parentNode.removeChild(model, destroy);
     },
 
     reject: function (silent) {
