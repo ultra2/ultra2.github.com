@@ -4165,7 +4165,7 @@ Ext.define('NAT.panel.persistent.Grid', {
     },
 
 	store_modeldirtychanged: function(){
-        this.refreshToolbar();
+        //this.refreshToolbar();
     },
 
     btnNew_click: function(){
@@ -4202,10 +4202,10 @@ Ext.define('NAT.panel.persistent.Grid', {
     },
 
     refreshToolbar: function () {
-		var hasModel = this.store.hasModel();
-		var changed = this.store.IsChanged();
-		this.down('#btnSave').setDisabled(!hasModel || !changed);
-		this.down('#btnCancel').setDisabled(!hasModel || !changed);
+//		var hasModel = this.store.hasModel();
+//		var changed = this.store.IsChanged();
+//		this.down('#btnSave').setDisabled(!hasModel || !changed);
+//		this.down('#btnCancel').setDisabled(!hasModel || !changed);
     }
 });
 
