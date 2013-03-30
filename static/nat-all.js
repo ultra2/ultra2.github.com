@@ -4152,11 +4152,9 @@ Ext.define('NAT.panel.persistent.Grid', {
         if (this.designMode) return;
 
         this.store = this.stores.getAt(0);
+        this.store.on('modeldirtychanged', this.store_modeldirtychanged, this);
 
-        this.down('#gridMain').on('select', this.gridMain_select, this);
-        this.down('#btnNew').on('click', this.btnNew_click, this);
-        this.down('#btnDelete').on('click', this.btnDelete_click, this);
-        this.down('#btnSave').on('click', this.btnSave_click, this);
+		this.down('#btnSave').on('click', this.btnSave_click, this);
         this.down('#btnCancel').on('click', this.btnCancel_click, this);
     },
 
@@ -4165,7 +4163,7 @@ Ext.define('NAT.panel.persistent.Grid', {
         this.store.load(null, null, this);
     },
 
-    gridMain_select: function(){
+	store_modeldirtychanged: function(){
         this.refreshToolbar();
     },
 
@@ -4203,10 +4201,10 @@ Ext.define('NAT.panel.persistent.Grid', {
     },
 
     refreshToolbar: function () {
-        var grid = this.down('#gridMain');
-        var model = grid.getSelected();
-
-        this.down('#btnDelete').setDisabled(!model);
+		if (!this.store.hasModel()) return;
+		var changed = this.store.IsChanged();
+		this.down('#btnSave').setDisabled(!changed);
+		this.down('#btnCancel').setDisabled(!changed);
     }
 });
 
