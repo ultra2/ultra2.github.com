@@ -4441,7 +4441,7 @@ Ext.define('NAT.toolbar.Command', {
         }
 
         if (this.dataStore && !this.dataMember) {
-            this.mixins.bindable.bindStore([this.dataStore]);
+			this.mixins.bindable.bindStore.call(this, this.dataStore);
         }
     },
 
