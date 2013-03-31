@@ -1,6 +1,22 @@
 /*
 Copyright(c) 2011 Company Name
 */
+Ext.apply(Ext, {
+
+	isEqual: function(value1, value2){
+		if (value1 === value2) return true;
+
+		if (Ext.isObject(value1) && Ext.isObject(value2)){
+			return (Ext.Object.isEqual(value1, value2));
+		}
+
+		if (Ext.isDate(value1) && Ext.isDate(value2)){
+			return (Ext.Date.isEqual(value1, value2));
+		}
+
+		return false;
+	}
+});
 Ext.define('NAT.button.Button', {
     extend: 'Ext.button.Button',
     alias: 'widget.natbutton',
@@ -941,7 +957,7 @@ Ext.define('NAT.form.field.Function', {
 
     //overidden from Ext.form.field.Text
     isEqual: function(value1, value2) {
-        return Ext.Object.isEqual(value1, value2);
+        return Ext.isEqual(value1, value2);
     },
 
     hasErrors: function() {
@@ -2382,7 +2398,7 @@ Ext.define('natjs.overrides.Object', {
 }, function() {
 
     Ext.Array.find = function(array, attribute, value) {
-        if (!array) return;
+        if (!array) return null;
         var matches = Ext.Array.filter(array, function(item){ return (item && (item[attribute] == value)); });
         if (matches.length > 0){
             return matches[0];
@@ -2391,7 +2407,7 @@ Ext.define('natjs.overrides.Object', {
     };
 
     Ext.Array.findAll = function(array, attribute, value) {
-        if (!array) return;
+        if (!array) return [];
         return Ext.Array.filter(array, function(item){ return (item[attribute] == value); });
     };
 
@@ -2399,12 +2415,25 @@ Ext.define('natjs.overrides.Object', {
     Ext.Array.convertToString = function(array, separator) {
         if (!array) return '';
         var result = '';
-        for (var j=0; array.length > j; j++){
-            result += array[j];
-            if ((separator) && (j < array.length-1)) result += separator;
+        for (var i=0; array.length > i; i++){
+            result += array[i];
+            if ((separator) && (i < array.length-1)) result += separator;
         }
         return result;
     };
+
+	Ext.Array.convertToObject = function(array) {
+		var strValue = '';
+		for (var i=0; array.length > i; i++){ strValue += array[i]; }
+		strValue = 'a=' + strValue;
+		try{
+			return eval(strValue);
+		}
+		catch(e){
+			console.log('object config value not evaulated: ' + array);
+			return null;
+		}
+	}
 });
 
 /**
@@ -4967,7 +4996,8 @@ Ext.define('NAT.data.Model', {
                 if (Ext.Array.contains(this.skipFieldSetters, fieldName)) {
                     Ext.Array.remove(this.skipFieldSetters, fieldName);
                 } else {
-                    Ext.callback(this[fnSet], this, [this.get(fieldName)], 1);
+					//don't use this.get(fieldName) here bc it runs the getter that can change the value
+                    Ext.callback(this[fnSet], this, [this[this.persistenceProperty][fieldName]], 1);
                 }
             }
         }
