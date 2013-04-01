@@ -5651,7 +5651,9 @@ Ext.define('NAT.data.Store', {
         options.params.collection = options.params.collection || this.collection;
 
         if (!options || !options.params || !options.params.collection){
-            Ext.callback(callback, scope, [{ message: 'options not valid' }, null], 0);
+			var message = 'store options not valid, storeId: ' + this.storeId;
+			console.log(message);
+            Ext.callback(callback, scope, [{ message: message }, null], 0);
             return;
         }
 
