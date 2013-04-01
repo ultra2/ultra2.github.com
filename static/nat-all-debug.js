@@ -4839,7 +4839,6 @@ Ext.define('NAT.viewport.Tabbed', {
     },
 
     btnRefresh_click: function(){
-        debugger;
         this.refresh(null, null, this);
     },
 
@@ -4847,10 +4846,15 @@ Ext.define('NAT.viewport.Tabbed', {
         var me = this;
         async.parallel([
             function(cb) {
-                var tpMain = me.down('#tpMain');
-                async.forEach(tpMain.items.getRange(), function(autopanel, done){
-                    autopanel.refresh(null, done, me);
-                },cb);
+				async.forEach(Ext.data.StoreManager.getRange(), function(store, done){
+					store.reload(null, done, me);
+				},cb);
+			},
+			function(result, cb) {
+				var tpMain = me.down('#tpMain');
+				async.forEach(tpMain.items.getRange(), function(autopanel, done){
+					autopanel.refresh(null, done, me);
+				},cb);
             }
         ],
         function(err, data) {
