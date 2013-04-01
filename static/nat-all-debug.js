@@ -4831,7 +4831,7 @@ Ext.define('NAT.viewport.Tabbed', {
     },
 
     showPanel: function(op, callback, scope) {
-        var panel = Ext.create(op.panel);
+        var panel = Ext.create(op.panel, { closable: true });
         var tpMain = this.down('#tpMain');
         tpMain.add(panel);
         tpMain.setActiveTab(panel);
