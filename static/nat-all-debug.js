@@ -1755,8 +1755,8 @@ Ext.define('NAT.grid.column.Lookup', {
         if (!this.renderer) {
             this.renderer = function(value, metaData, record, rowIndex, colIndex) {
                 var col = this.columns[colIndex];
-                if (!col.field) return 'no field';
-                var result = col.field.renderer(value, record);
+                var editor = col.field || col.getEditor();
+                var result = editor.renderer(value, record);
                 return Ext.util.Format.htmlEncode(result);
             };
         }
