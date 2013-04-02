@@ -1460,21 +1460,69 @@ Ext.define('NAT.form.Panel', {
     alias: 'widget.natform',
 
     store: null,		//current store
-	dataStore: null,	//current store if there is no dataMember
+	dataStore: null,
 	dataMember: null,
 
     children: [],
 
     isChanging: false,
 
-//        layout: {
-//            type: 'vbox'
-//        },
-
     initComponent: function () {
-        this.callParent(arguments);
-        this.UpdateChildren();
+
+		this.dataStore = this.store;
+		this.store = null;
+
+		this.callParent(arguments);
+
+		if (this.designMode) return;
+
+		this.UpdateChildren();
+		this.on('afterrender', this.this_afterRender, this, {single: true});
     },
+
+	this_afterRender: function(){
+		debugger;
+		var dataStore = this.dataStore;
+		this.dataStore = null;
+		this.bindStore(dataStore, this.dataMember);
+	},
+
+	bindStore: function(dataStore, dataMember) {
+		if (dataStore == this.dataStore && dataMember == dataMember) return;
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		this.dataStore = dataStore;
+		this.dataMember = dataMember;
+
+		if (Ext.isString(this.dataStore)){
+			//local store?
+			var natpanel = this.up('natpanel');
+			if (natpanel){
+				this.dataStore = natpanel.stores.getByKey(this.dataStore);
+			}
+			//global store?
+			if (!this.dataStore){
+				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+			}
+		}
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		if (this.dataStore && !this.dataMember) {
+			this.store = this.dataStore;
+			this.InitBinding();
+		}
+	},
+
+	dataStore_currentmodelchanged: function(currModel){
+		this.store =  (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+		this.InitBinding();
+	},
 
     UpdateChildren: function() {
         this.children = [];
@@ -1492,11 +1540,6 @@ Ext.define('NAT.form.Panel', {
             else if (item.$className === 'NAT.tree.Panel') this.children.push(item);
             else this.UpdateChildren_req(item);
         }
-    },
-
-    bindStore: function(store) {
-        this.store = store;
-        this.InitBinding();
     },
 
     InitBinding: function () {
