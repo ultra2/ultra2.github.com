@@ -1050,6 +1050,21 @@ Ext.define('NAT.form.field.Lookup', {
     }
 });
 
+Ext.define('NAT.form.field.Number', {
+    extend: 'Ext.form.field.Number',
+    alias: 'widget.natnumberfield',
+
+    validateOnChange: false,
+    validateOnBlur: false,
+    msgTarget: 'side',
+
+    propertyPath: '',
+
+    hasErrors: function() {
+        return ((this.activeErrors) && (this.activeErrors.length > 0));
+    }
+});
+
 Ext.define('NAT.form.field.Object', {
     extend:'Ext.form.field.Trigger',
     alias: 'widget.natobjectfield',
