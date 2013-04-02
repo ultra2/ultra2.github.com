@@ -1481,7 +1481,6 @@ Ext.define('NAT.form.Panel', {
     },
 
 	this_afterRender: function(){
-		debugger;
 		var dataStore = this.dataStore;
 		this.dataStore = null;
 		this.bindStore(dataStore, this.dataMember);
