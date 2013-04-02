@@ -1022,13 +1022,13 @@ Ext.define('NAT.form.field.Lookup', {
 
     initComponent: function () {
 		if (this.designMode){
-			thin.store = null;
+			this.store = null;
 		}
 
         this.callParent(arguments);
 
 		if (this.designMode) return;
-		
+
         this.on('beforequery', this.this_beforequery, this);
     },
 
