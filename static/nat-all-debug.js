@@ -4103,7 +4103,7 @@ Ext.define('NAT.panel.persistent.Form', {
 
         var model = app.natCreateModel(this.model);
 		this.store.add(model);
-		this.FocusFirstField();
+		this.down('#frmMain').FocusFirstField();
     },
 
     showMode: function(op, callback, scope){
