@@ -836,8 +836,8 @@ Ext.define('NAT.form.field.Function', {
         return Ext.create('widget.natwindow', {
             title: 'Function Editor',
             modal: true,
-            height: 600,
-            width: 1200,
+            height: 700,
+            width: 1400,
             layout: {
                 type: 'vbox',
                 align: 'stretch'
@@ -1021,7 +1021,14 @@ Ext.define('NAT.form.field.Lookup', {
     },
 
     initComponent: function () {
+		if (this.designMode){
+			thin.store = null;
+		}
+
         this.callParent(arguments);
+
+		if (this.designMode) return;
+		
         this.on('beforequery', this.this_beforequery, this);
     },
 
@@ -1452,8 +1459,9 @@ Ext.define('NAT.form.Panel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.natform',
 
-    store: null,
-    propertyPath: '',
+    store: null,		//current store
+	dataStore: null,	//current store if there is no dataMember
+	dataMember: null,
 
     children: [],
 
@@ -1810,12 +1818,12 @@ Ext.define('NAT.grid.Panel', {
 
         if (this.designMode) return;
 
-        for (var i = 0; this.columns.length > i; i++) {
-            var column = this.columns[i];
-            if (column.natIsLookup) {
-                column.on('bindstore', this.luColumn_bindstore, this);
-            }
-        }
+//        for (var i = 0; this.columns.length > i; i++) {
+//            var column = this.columns[i];
+//            if (column.natIsLookup) {
+//                column.on('bindstore', this.luColumn_bindstore, this);
+//            }
+//        }
 
         this.on('afterrender', this.this_afterRender, this, {single: true});
         this.on('select', this.this_select, this);
@@ -1876,13 +1884,13 @@ Ext.define('NAT.grid.Panel', {
         this.store.Deselect();
     },
 
-    luColumn_bindstore: function(column, store) {
-        this.mon(store, 'LoadCompleted', function(models, operation, success) {
-            if (models && models.length > 0) {
-                this.getView().refresh();
-            }
-        }, this);
-    },
+//    luColumn_bindstore: function(column, store) {
+//        this.mon(store, 'LoadCompleted', function(models, operation, success) {
+//            if (models && models.length > 0) {
+//                this.getView().refresh();
+//            }
+//        }, this);
+//    },
 
     getSelected: function () {
         var selRecords = this.getSelectionModel().getSelection();
@@ -4073,10 +4081,10 @@ Ext.define('NAT.panel.persistent.Form', {
 
         this.store = this.stores.getAt(0);
 
-        this.down('#btnDelete').on('click', this.btnDelete_click, this);
+//        this.down('#btnDelete').on('click', this.btnDelete_click, this);
         this.down('#btnSave').on('click', this.btnSave_click, this);
         this.down('#btnCancel').on('click', this.btnCancel_click, this);
-        this.down('#btnClose').on('click', this.btnClose_click, this);
+//        this.down('#btnClose').on('click', this.btnClose_click, this);
     },
 
     showPanel: function(op, callback, scope) {
@@ -4142,8 +4150,8 @@ Ext.define('NAT.panel.persistent.Form', {
 
     btnCancel_click: function(){
         this.reject();
-        this.refreshUI(null);
-    },
+		this.close();
+	},
 
     btnClose_click: function(){
         this.close();
