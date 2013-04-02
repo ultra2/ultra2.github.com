@@ -4096,20 +4096,20 @@ Ext.define('NAT.panel.persistent.Form', {
     },
 
     newMode: function(op, callback, scope){
-        this.down('#btnDelete').setVisible(false);
+        //this.down('#btnDelete').setVisible(false);
         this.down('#btnSave').setVisible(true);
         this.down('#btnCancel').setVisible(true);
-        this.down('#btnClose').setVisible(false);
+        //this.down('#btnClose').setVisible(false);
 
         var model = app.natCreateModel(this.model);
         this.store.setModel(model);
     },
 
     showMode: function(op, callback, scope){
-        this.down('#btnDelete').setVisible(false);
+        //this.down('#btnDelete').setVisible(false);
         this.down('#btnSave').setVisible(false);
         this.down('#btnCancel').setVisible(false);
-        this.down('#btnClose').setVisible(true);
+        //this.down('#btnClose').setVisible(true);
 
         this.store.load({ params: { id: op.modelId }}, null, this);
     },
@@ -4118,16 +4118,16 @@ Ext.define('NAT.panel.persistent.Form', {
         this.down('#btnDelete').setVisible(false);
         this.down('#btnSave').setVisible(true);
         this.down('#btnCancel').setVisible(true);
-        this.down('#btnClose').setVisible(false);
+        //this.down('#btnClose').setVisible(false);
 
         this.store.load({ params: { id: op.modelId }}, null, this);
     },
 
     deleteMode: function(op, callback, scope){
-        this.down('#btnDelete').setVisible(true);
+        //this.down('#btnDelete').setVisible(true);
         this.down('#btnSave').setVisible(false);
         this.down('#btnCancel').setVisible(true);
-        this.down('#btnClose').setVisible(false);
+        //this.down('#btnClose').setVisible(false);
 
         this.store.load({ params: { id: op.modelId }}, null, this);
     },
