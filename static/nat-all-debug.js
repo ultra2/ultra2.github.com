@@ -79,6 +79,255 @@ Ext.define('NAT.tree.plugin.CellEditing', {
     }
 });
 
+Ext.define('NAT.tree.plugin.TreeViewDragDrop', {
+	extend: 'Ext.tree.plugin.TreeViewDragDrop',
+	alias: 'plugin.nattreeviewdragdrop',
+
+	onViewRender : function(view) {
+		var me = this;
+
+		if (me.enableDrag) {
+			me.dragZone = new Ext.tree.ViewDragZone({
+				view: view,
+				ddGroup: me.dragGroup || me.ddGroup,
+				dragText: me.dragText,
+				repairHighlightColor: me.nodeHighlightColor,
+				repairHighlight: me.nodeHighlightOnRepair
+			});
+		}
+
+		if (me.enableDrop) {
+			me.dropZone = new NAT.tree.ViewDropZone({
+				view: view,
+				ddGroup: me.dropGroup || me.ddGroup,
+				allowContainerDrops: me.allowContainerDrops,
+				appendOnly: me.appendOnly,
+				allowParentInserts: me.allowParentInserts,
+				expandDelay: me.expandDelay,
+				dropHighlightColor: me.nodeHighlightColor,
+				dropHighlight: me.nodeHighlightOnDrop
+			});
+		}
+	}
+});
+
+Ext.define('NAT.tree.Panel', {
+    extend: 'Ext.tree.Panel',
+    alias: 'widget.nattree',
+    requires: ['NAT.tree.plugin.CellEditing'],
+
+    animate: false,
+
+    constructor: function (config) {
+        this.callParent([config]);
+        return this;
+    },
+
+    initComponent: function () {
+//            this.viewConfig = Ext.applyIf(this.viewConfig || {}, {
+//                loadMask: false //if true after refreshing the store grid rows cant be selected
+//            });
+
+        this.callParent(arguments);
+
+        this.on('select', this.tree_select, this);
+        this.on('deselect', this.tree_deselect, this);
+    },
+
+    tree_select: function (rowModel, model) {
+        if (!this.store) return;
+        this.store.Select(model);
+    },
+
+    tree_deselect: function (rowModel, model) {
+        if (!this.store) return;
+        this.store.Deselect();
+    },
+
+//    bindStore: function(store) {
+//        if (this.IsVisible()) {
+//            this.bindStore(store);
+//        } else {
+//            this.deferredBind = true;
+//            this.deferredBindStore = store;
+//        }
+//    },
+
+    bindStore: function(store) {
+        if (!store) return;
+        this.store = store;
+
+        var me = this;
+        me.mon(me.store, {
+            scope: me,
+            rootchange: me.onRootChange,
+            clear: me.onClear
+        });
+
+        me.relayEvents(me.store, [
+            'beforeload',
+            'load'
+        ]);
+
+        me.mon(me.store, {
+            append: me.createRelayer('itemappend'),
+            remove: me.createRelayer('itemremove'),
+            move: me.createRelayer('itemmove', [0, 4]),
+            insert: me.createRelayer('iteminsert'),
+            beforeappend: me.createRelayer('beforeitemappend'),
+            beforeremove: me.createRelayer('beforeitemremove'),
+            beforemove: me.createRelayer('beforeitemmove'),
+            beforeinsert: me.createRelayer('beforeiteminsert'),
+            expand: me.createRelayer('itemexpand', [0, 1]),
+            collapse: me.createRelayer('itemcollapse', [0, 1]),
+            beforeexpand: me.createRelayer('beforeitemexpand', [0, 1]),
+            beforecollapse: me.createRelayer('beforeitemcollapse', [0, 1])
+        });
+
+        var root = store.getRootNode();
+        if (!root) return;
+        this.view.setRootNode(root);
+    },
+
+    getSelected: function () {
+        var selRecords = this.getSelectionModel().getSelection();
+        if (selRecords.length == 0) return null;
+        return selRecords[0];
+    },
+
+    SelectRoot: function (suppressEvent) {
+        this.getSelectionModel().select(this.getRootNode(), false, suppressEvent);
+    },
+
+    Select: function (models, keepExisting, suppressEvent) {
+        this.getSelectionModel().select(models, keepExisting, suppressEvent);
+    },
+
+    getById: function(nodeId) {
+        return this.store.getById(nodeId);
+    },
+
+    SelectById: function(nodeId) {
+        if (!this.store) return;
+        var node = this.store.getNodeById(nodeId);
+        if (!node) return;
+        this.selectPath(node.getPath());
+    },
+
+    Deselect: function (models, suppressEvent) {
+        this.getSelectionModel().deselect(models, suppressEvent);
+    }
+
+//    startEdit: function(model, columnItemId) {
+//        var plugin = this.getPlugin();
+//        var column = this.headerCt.child(columnItemId);
+//        if (!column) return;
+//
+//        if (Ext.isString(model)) {
+//            model = this.store.getNodeById(model);
+//        }
+//        if (!model) return;
+//
+//        this.Select(model);
+//        plugin.startEdit(model, column);
+//    }
+});
+
+Ext.define('NAT.tree.ViewDropZone', {
+	extend: 'Ext.tree.ViewDropZone',
+
+	onNodeOver : function(node, dragZone, e, data) {
+		var position = this.getPosition(e, node),
+			returnCls = this.dropNotAllowed,
+			view = this.view,
+			targetNode = view.getRecord(node),
+			indicator = this.getIndicator(),
+			indicatorX = 0,
+			indicatorY = 0;
+
+		// auto node expand check
+		this.cancelExpand();
+		if (position == 'append' && !this.expandProcId && !Ext.Array.contains(data.records, targetNode) && !targetNode.isLeaf() && !targetNode.isExpanded()) {
+			this.queueExpand(targetNode);
+		}
+
+		if (this.isValidDropPoint(node, position, dragZone, e, data)){
+			this.valid = true;
+			this.currentPosition = position;
+			this.overRecord = targetNode;
+
+			indicator.setWidth(Ext.fly(node).getWidth());
+			indicatorY = Ext.fly(node).getY() - Ext.fly(view.el).getY() - 1;
+
+			/*
+			 * In the code below we show the proxy again. The reason for doing this is showing the indicator will
+			 * call toFront, causing it to get a new z-index which can sometimes push the proxy behind it. We always
+			 * want the proxy to be above, so calling show on the proxy will call toFront and bring it forward.
+			 */
+			if (position == 'before') {
+				returnCls = targetNode.isFirst() ? Ext.baseCSSPrefix + 'tree-drop-ok-above' : Ext.baseCSSPrefix + 'tree-drop-ok-between';
+				indicator.showAt(0, indicatorY);
+				dragZone.proxy.show();
+			} else if (position == 'after') {
+				returnCls = targetNode.isLast() ? Ext.baseCSSPrefix + 'tree-drop-ok-below' : Ext.baseCSSPrefix + 'tree-drop-ok-between';
+				indicatorY += Ext.fly(node).getHeight();
+				indicator.showAt(0, indicatorY);
+				dragZone.proxy.show();
+			} else {
+				returnCls = Ext.baseCSSPrefix + 'tree-drop-ok-append';
+				// @TODO: set a class on the parent folder node to be able to style it
+				indicator.hide();
+			}
+
+			//IZS: begin
+			//check here bc we need indicator showed even if validatedrop returns false
+			if (!this.validatedrop(node, data, targetNode, position)){
+				this.valid = false;
+				returnCls = this.dropNotAllowed;
+			}
+			//IZS: end
+		} else {
+			this.valid = false;
+		}
+
+		this.currentCls = returnCls;
+		return returnCls;
+	},
+
+	onContainerOver : function(dd, e, data) {
+		if (!this.allowContainerDrops){
+			return e.getTarget('.' + this.indicatorCls) ? this.currentCls : this.dropNotAllowed;
+		}
+
+		var returnCls = this.dropNotAllowed,
+			view = this.view,
+			indicator = this.getIndicator();
+
+		this.currentPosition = null;
+		this.overRecord = null;
+		indicator.hide();
+
+		if (!this.validatedrop(null, data, null, null)){
+			this.valid = false;
+			returnCls = this.dropNotAllowed;
+		}
+		else{
+			this.valid = true;
+			returnCls = Ext.baseCSSPrefix + 'tree-drop-ok-append';
+		}
+
+		return returnCls;
+	},
+
+//	onContainerDrop : function(dd, e, data) {
+//		return true;
+//	},
+
+	validatedrop: function(node, data, overModel, dropPosition){
+		return this.fireViewEvent('validatedrop', node, data, overModel, dropPosition);
+	}
+});
+
 Ext.define('NAT.edit.Source', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.natsourceedit',
@@ -4564,128 +4813,6 @@ Ext.define('NAT.toolbar.Command', {
 
 //    bindStore: function(store) {
 //        this.bindStore(store);
-//    }
-});
-
-Ext.define('NAT.tree.Panel', {
-    extend: 'Ext.tree.Panel',
-    alias: 'widget.nattree',
-    requires: ['NAT.tree.plugin.CellEditing'],
-
-    animate: false,
-
-    constructor: function (config) {
-        this.callParent([config]);
-        return this;
-    },
-
-    initComponent: function () {
-//            this.viewConfig = Ext.applyIf(this.viewConfig || {}, {
-//                loadMask: false //if true after refreshing the store grid rows cant be selected
-//            });
-
-        this.callParent(arguments);
-
-        this.on('select', this.tree_select, this);
-        this.on('deselect', this.tree_deselect, this);
-    },
-
-    tree_select: function (rowModel, model) {
-        if (!this.store) return;
-        this.store.Select(model);
-    },
-
-    tree_deselect: function (rowModel, model) {
-        if (!this.store) return;
-        this.store.Deselect();
-    },
-
-//    bindStore: function(store) {
-//        if (this.IsVisible()) {
-//            this.bindStore(store);
-//        } else {
-//            this.deferredBind = true;
-//            this.deferredBindStore = store;
-//        }
-//    },
-
-    bindStore: function(store) {
-        if (!store) return;
-        this.store = store;
-
-        var me = this;
-        me.mon(me.store, {
-            scope: me,
-            rootchange: me.onRootChange,
-            clear: me.onClear
-        });
-
-        me.relayEvents(me.store, [
-            'beforeload',
-            'load'
-        ]);
-
-        me.mon(me.store, {
-            append: me.createRelayer('itemappend'),
-            remove: me.createRelayer('itemremove'),
-            move: me.createRelayer('itemmove', [0, 4]),
-            insert: me.createRelayer('iteminsert'),
-            beforeappend: me.createRelayer('beforeitemappend'),
-            beforeremove: me.createRelayer('beforeitemremove'),
-            beforemove: me.createRelayer('beforeitemmove'),
-            beforeinsert: me.createRelayer('beforeiteminsert'),
-            expand: me.createRelayer('itemexpand', [0, 1]),
-            collapse: me.createRelayer('itemcollapse', [0, 1]),
-            beforeexpand: me.createRelayer('beforeitemexpand', [0, 1]),
-            beforecollapse: me.createRelayer('beforeitemcollapse', [0, 1])
-        });
-
-        var root = store.getRootNode();
-        if (!root) return;
-        this.view.setRootNode(root);
-    },
-
-    getSelected: function () {
-        var selRecords = this.getSelectionModel().getSelection();
-        if (selRecords.length == 0) return null;
-        return selRecords[0];
-    },
-
-    SelectRoot: function (suppressEvent) {
-        this.getSelectionModel().select(this.getRootNode(), false, suppressEvent);
-    },
-
-    Select: function (models, keepExisting, suppressEvent) {
-        this.getSelectionModel().select(models, keepExisting, suppressEvent);
-    },
-
-    getById: function(nodeId) {
-        return this.store.getById(nodeId);
-    },
-
-    SelectById: function(nodeId) {
-        if (!this.store) return;
-        var node = this.store.getNodeById(nodeId);
-        if (!node) return;
-        this.selectPath(node.getPath());
-    },
-
-    Deselect: function (models, suppressEvent) {
-        this.getSelectionModel().deselect(models, suppressEvent);
-    }
-
-//    startEdit: function(model, columnItemId) {
-//        var plugin = this.getPlugin();
-//        var column = this.headerCt.child(columnItemId);
-//        if (!column) return;
-//
-//        if (Ext.isString(model)) {
-//            model = this.store.getNodeById(model);
-//        }
-//        if (!model) return;
-//
-//        this.Select(model);
-//        plugin.startEdit(model, column);
 //    }
 });
 
