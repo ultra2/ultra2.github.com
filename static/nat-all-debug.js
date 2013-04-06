@@ -5140,6 +5140,7 @@ Ext.define('NAT.data.Model', {
     fieldsInfo: [
     ],
 
+	idgen: 'uuid',
     idProperty: '_id',
     state: null,
     isNATDirty: false,
@@ -5228,7 +5229,7 @@ Ext.define('NAT.data.Model', {
     },
 
     isNew: function () {
-        return this.getId() == '';
+        return (this.get('_created') === null);
     },
 
     //support change event, reject associations
