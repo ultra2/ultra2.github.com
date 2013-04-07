@@ -216,21 +216,34 @@ Ext.define('NAT.tree.Panel', {
 
     Deselect: function (models, suppressEvent) {
         this.getSelectionModel().deselect(models, suppressEvent);
-    }
+    },
 
-//    startEdit: function(model, columnItemId) {
-//        var plugin = this.getPlugin();
-//        var column = this.headerCt.child(columnItemId);
-//        if (!column) return;
-//
-//        if (Ext.isString(model)) {
-//            model = this.store.getNodeById(model);
-//        }
-//        if (!model) return;
-//
-//        this.Select(model);
-//        plugin.startEdit(model, column);
-//    }
+    startEdit: function(model, column) {
+		var plugin = this.getPlugin();
+		if (!plugin) return;
+
+		if (!model){
+			model = this.getSelected();
+		}
+		else if (Ext.isString(model)) {
+			model = this.store.getNodeById(model);
+		}
+		if (!model) return;
+
+		if (model != this.getSelected()){
+			this.selectPath(model.getPath());
+		}
+
+		if (!column){
+			column = this.headerCt.child(0);
+		}
+		else if (Ext.isString(column)) {
+			column = this.headerCt.child(column);
+		}
+        if (!column) return;
+
+        plugin.startEdit(model, column);
+    }
 });
 
 Ext.define('NAT.tree.ViewDropZone', {
@@ -6127,8 +6140,8 @@ Ext.define('NAT.data.Store', {
         this.fireEvent('datachanged', this);
     },
 
-    createNew: function(){
-        var model = app.natCreateModel(this.model);
+    createNew: function(model, config){
+        model = app.natCreateModel(model || this.model, config);
         this.add(model);
         this.Select(model);
 		return model;
@@ -6636,7 +6649,26 @@ Ext.define('NAT.data.TreeStore', {
         newParent.updateInfo(false);
     },
 
-    updateCurrModel: function() {
+	createNew: function(model, config){
+		var parent = this.currModel || this.getRootNode();
+		model = app.natCreateModel(model || this.model, Ext.apply(config, {loaded: true}));
+		parent.appendChild(model);
+		this.Select(model);
+		return model;
+	},
+
+	removeCurrent: function(){
+		if (!this.currModel) return;
+		this.remove(this.currModel);
+		this.updateCurrModel();
+	},
+
+	removeAll: function(silent) {
+		this.callParent(arguments);
+		this.Select(null);
+	},
+
+	updateCurrModel: function() {
         if (this.currModel) return;
         this.Select(this.getRootNode());
     },
