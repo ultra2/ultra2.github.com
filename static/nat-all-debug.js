@@ -5171,11 +5171,50 @@ Ext.define('NAT.data.Model', {
     Created: function() {
     },
 
-    associationChanged: function(){
-        this.afterEdit();
+    associationChanged: function(association){
+		this.isNATValid = false; //call async ValidateModel to set true
+		this.natUpdateDirty();
     },
 
-    get: function(fieldName) {
+	fieldChanged : function(modifiedFieldNames) {
+		modifiedFieldNames = modifiedFieldNames || [];
+		//console.log('afterEdit ' + this.$className + '   ' + modifiedFieldNames);
+
+		this.isNATValid = false; //call async ValidateModel to set true
+		this.natUpdateDirty();
+
+		if (modifiedFieldNames.length > 0){
+			var fieldName = modifiedFieldNames[0];
+			var fnSet = 'set_' + fieldName;
+			if (typeof this[fnSet] == "function") {
+				if (Ext.Array.contains(this.skipFieldSetters, fieldName)) {
+					Ext.Array.remove(this.skipFieldSetters, fieldName);
+				} else {
+					//don't use this.get(fieldName) here bc it runs the getter that can change the value
+					Ext.callback(this[fnSet], this, [this[this.persistenceProperty][fieldName]], 1);
+				}
+			}
+		}
+	},
+
+	natUpdateDirty: function () {
+		var result = this.dirty;
+		if (!result) {
+			for (var i = 0; i < this.associations.length; i++) {
+				var association = this.associations.items[i];
+				if (association.IsChanged(this)) {
+					result = true;
+					break;
+				}
+			}
+		}
+		if (this.isNATDirty != result){
+			this.isNATDirty = result;
+			this.callStore('OnModelDirtyChanged', this);
+		}
+	},
+
+	get: function(fieldName) {
         if (Ext.isObject(fieldName)) {
             return this.callParent(arguments);
         }
@@ -5191,49 +5230,20 @@ Ext.define('NAT.data.Model', {
         return value;
     },
 
-    afterEdit : function(modifiedFieldNames) {
-        modifiedFieldNames = modifiedFieldNames || [];
-        //console.log('afterEdit ' + this.$className + '   ' + modifiedFieldNames);
+	set: function (fieldName, newValue) {
+		var modifiedFieldNames = this.callParent(arguments);
+		if (!this.editing && modifiedFieldNames) {
+			this.fieldChanged(modifiedFieldNames);
+		}
+		return modifiedFieldNames;
+	},
 
-        this.isNATValid = false; //call async ValidateModel to set true
+	endEdit : function(silent, modifiedFieldNames){
+		this.callParent(arguments);
+		this.fieldChanged(modifiedFieldNames);
+	},
 
-        this.natUpdateDirty();
-
-        if (modifiedFieldNames.length > 0){
-            var fieldName = modifiedFieldNames[0];
-            var fnSet = 'set_' + fieldName;
-            if (typeof this[fnSet] == "function") {
-                if (Ext.Array.contains(this.skipFieldSetters, fieldName)) {
-                    Ext.Array.remove(this.skipFieldSetters, fieldName);
-                } else {
-					//don't use this.get(fieldName) here bc it runs the getter that can change the value
-                    Ext.callback(this[fnSet], this, [this[this.persistenceProperty][fieldName]], 1);
-                }
-            }
-        }
-
-        this.callStore('afterEdit', modifiedFieldNames);
-    },
-
-    natUpdateDirty: function () {
-        var result = false;
-        if (this.dirty) result = true;
-        if (!result) {
-            for (var i = 0; i < this.associations.length; i++) {
-                var association = this.associations.items[i];
-                if (association.IsChanged(this)) {
-                    result = true;
-                    break;
-                }
-            }
-        }
-        if (this.isNATDirty != result){
-            this.isNATDirty = result;
-            this.callStore('OnModelDirtyChanged', this);
-        }
-    },
-
-    Merge: function(source) {
+	Merge: function(source) {
         this.set(source.data);
         for (var i = 0; i < this.associations.length; i++) {
             var association = this.associations.items[i];
@@ -6140,8 +6150,8 @@ Ext.define('NAT.data.Store', {
         this.fireEvent('datachanged', this);
     },
 
-    createNew: function(model, config){
-        model = app.natCreateModel(model || this.model, config);
+	createNew: function(model, config){
+		model = app.natCreateModel(model || this.model, config);
         this.add(model);
         this.Select(model);
 		return model;
@@ -6164,16 +6174,16 @@ Ext.define('NAT.data.Store', {
     },
 
     filterNew: function(item) {
-        return (item.isNew()) && (item.isNATValid);
+        return (item.isNew() && item.isNATValid);
     },
     filterNewAll: function(item) {
         return item.isNew();
     },
     filterUpdated: function(item) {
-        return (!item.isNew()) && (item.isNATDirty ) && (item.isNATValid);
+        return (!item.isNew() && item.isNATDirty && item.isNATValid);
     },
     filterUpdatedAll: function(item) {
-        return (!item.isNew()) && (item.isNATDirty );
+        return (!item.isNew() && item.isNATDirty);
     },
 
     GetChangedModels: function () {
@@ -6721,16 +6731,16 @@ Ext.define('NAT.data.TreeStore', {
     },
 
     filterNew: function(item) {
-        return (item.isNew()) && (item.isNATValid);
+        return (item.isNew() && item.isNATValid);
     },
     filterNewAll: function(item) {
         return item.isNew();
     },
     filterUpdated: function(item) {
-        return (!item.isNew()) && (item.isNATDirty ) && (item.isNATValid);
+        return (!item.isNew() && item.isNATDirty && item.isNATValid);
     },
     filterUpdatedAll: function(item) {
-        return (!item.isNew()) && (item.isNATDirty );
+        return (!item.isNew() && item.isNATDirty);
     },
 
     GetChangedModels: function () {
