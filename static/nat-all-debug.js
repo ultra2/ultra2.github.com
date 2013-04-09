@@ -6604,13 +6604,13 @@ Ext.define('NAT.data.TreeStore', {
         }
 
         if (!original) {  //new node
-            var node = Ext.data.NodeInterface.decorate(model);
-            node.beginEdit();
-            parent.insertBefore(node, nodeBefore);
+            Ext.data.NodeInterface.decorate(model);
+			model.beginEdit();
+            parent.insertBefore(model, nodeBefore);
             parent.updateInfo(false); //it updates children's indexes recursively
-            node.set('loaded', true); //for Extjs compatibility
-            node.endEdit(true);
-            node.commit();
+			model.set('loaded', true); //for Extjs compatibility
+			model.endEdit(true);
+			model.commit();
             return true;
         }
 
