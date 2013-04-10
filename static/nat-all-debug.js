@@ -6677,7 +6677,7 @@ Ext.define('NAT.data.TreeStore', {
     },
 
 	createNew: function(model, config){
-		var parent = this.currModel || this.getRootNode();
+		var parent = this.getCurrModel();
 		model = app.natCreateModel(model || this.model, Ext.apply(config, {loaded: true}));
 		parent.appendChild(model);
 		this.Select(model);
@@ -6694,11 +6694,6 @@ Ext.define('NAT.data.TreeStore', {
 		this.callParent(arguments);
 		this.Select(null);
 	},
-
-	updateCurrModel: function() {
-        if (this.currModel) return;
-        this.Select(this.getRootNode());
-    },
 
     setRootNode: function(root, /* private */ preventLoad) {
         var me = this,
@@ -6742,6 +6737,7 @@ Ext.define('NAT.data.TreeStore', {
 //        }
 
         root.join(this);
+		this.Select(root, true);
 //IZS end
 
         return root;
@@ -6781,6 +6777,10 @@ Ext.define('NAT.data.TreeStore', {
     },
 
     Select: function (model, suppressEvent) {
+		if (!model){
+			model = this.getRootNode();
+		}
+
         if (this.currModel == model) return;
 
         if (!suppressEvent) {
@@ -6813,7 +6813,25 @@ Ext.define('NAT.data.TreeStore', {
         return ((this.currModel) && (typeof this.currModel == 'object'));
     },
 
-    OnSelect: function(oldModel, newModel) {
+	getCurrModel: function() {
+		if (this.hasModel()){
+			return this.currModel;
+		}
+
+		this.updateCurrModel();
+
+		if (this.hasModel()){
+			return this.currModel;
+		}
+		return null;
+	},
+
+	updateCurrModel: function() {
+		if (this.currModel) return;
+		this.Select(null);
+	},
+
+	OnSelect: function(oldModel, newModel) {
         this.fireEvent('select', oldModel, newModel);
     },
 
