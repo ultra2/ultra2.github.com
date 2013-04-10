@@ -2302,6 +2302,9 @@ Ext.define('natjs.overrides.app.Application', {
             var fullClassName = this.GetModelNameWithNamespace(className);
 
             var m = Ext.create(fullClassName);
+
+			m.phantom = true;
+
             m.beginEdit();
             m.set('_type', className);
             m.set(config);
@@ -6651,6 +6654,20 @@ Ext.define('NAT.data.TreeStore', {
 
         return true;
     },
+
+	//not push new records into removed[]
+	onNodeRemove: function(parent, node, isMove) {
+		var me = this,
+			removed = me.removed;
+
+		if (!node.isReplace && Ext.Array.indexOf(removed, node) == -1) {
+			if (!node.isNew()) removed.push(node);
+		}
+
+		if (me.autoSync && !me.autoSyncSuspended && !isMove) {
+			me.sync();
+		}
+	},
 
     OnMove: function (model, oldParent, newParent) {
         if (oldParent != newParent) {
