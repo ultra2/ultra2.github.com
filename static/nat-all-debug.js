@@ -2728,12 +2728,10 @@ Ext.define('natjs.overrides.Object', {
 }, function() {
 
     Ext.Array.find = function(array, attribute, value) {
-        if (!array) return null;
-        var matches = Ext.Array.filter(array, function(item){ return (item && (item[attribute] == value)); });
-        if (matches.length > 0){
-            return matches[0];
-        }
-        return null;
+		for (var i=0; array.length > i; i++){
+			if (array[i][attribute] == value) return array[i];
+		}
+		return null;
     };
 
     Ext.Array.findAll = function(array, attribute, value) {
