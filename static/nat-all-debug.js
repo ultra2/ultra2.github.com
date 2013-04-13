@@ -2729,7 +2729,7 @@ Ext.define('natjs.overrides.Object', {
 
     Ext.Array.find = function(array, attribute, value) {
 		for (var i=0; array.length > i; i++){
-			if (array[i][attribute] == value) return array[i];
+			if (array[i] && (array[i][attribute] == value)) return array[i];
 		}
 		return null;
     };
@@ -2758,7 +2758,7 @@ Ext.define('natjs.overrides.Object', {
 			return eval(strValue);
 		}
 		catch(e){
-			console.log('object config value not evaulated: ' + array);
+			//console.log('object config value not evaulated: ' + array);
 			return null;
 		}
 	}
