@@ -4298,11 +4298,6 @@ Ext.define('NAT.panel.Panel', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.natpanel',
 
-    op: null,
-    callback: null,
-    scope: null,
-    result: null,
-
     initComponent: function(){
         //before callParent bc it creates items (like grid) that needs stores created
         if (!this.designMode){
@@ -4310,10 +4305,6 @@ Ext.define('NAT.panel.Panel', {
         }
 
         this.callParent(arguments);
-
-        if (this.designMode) return;
-
-        this.on('close', this.this_close, this);
     },
 
     initStores : function() {
@@ -4329,55 +4320,6 @@ Ext.define('NAT.panel.Panel', {
             store = Ext.create('widget.' + xtype, store);
             me.stores.add(store.itemId, store);
         }
-    },
-
-    this_close: function() {
-        Ext.callback(this.callback, this.scope, [null, this.result], 0);
-    },
-
-    showPanel: function(op, callback, scope) {
-        this.op = op || {};
-        this.callback = callback;
-        this.scope = scope;
-    },
-
-    load: function(op, callback, scope) {
-        var me = this;
-        async.forEach(me.stores.getRange(), function(store, done){
-                store.load(null, done, me);
-        },
-        function(data, err){
-            Ext.callback(callback, scope, [err, null], 0);
-        })
-    },
-
-    reject: function(){
-        this.stores.each(function(store){
-            store.reject();
-        }, this)
-    },
-
-    save: function (op, callback, scope) {
-        var me = this;
-        async.forEach(me.stores.getRange(), function(store, done){
-            store.save(null, done, me);
-        },
-        function(data, err){
-            Ext.callback(callback, scope, [err, null], 0);
-        })
-    },
-
-    refresh: function(op, callback, scope) {
-        var me = this;
-        async.forEach(me.stores.getRange(), function(store, done){
-            store.reload(null, done, me);
-        },
-        function(data, err){
-            Ext.callback(callback, scope, [err, null], 0);
-        })
-    },
-
-    refreshUI: function(op) {
     }
 });
 
