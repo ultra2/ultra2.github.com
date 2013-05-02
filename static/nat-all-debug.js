@@ -1261,7 +1261,10 @@ Ext.define('NAT.form.field.Lookup', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.natlookupfield',
 
-    validateOnChange: false,
+	dataStore: null,
+	dataMember: null,
+
+	validateOnChange: false,
     validateOnBlur: false,
     msgTarget: 'side',
 
@@ -1283,18 +1286,59 @@ Ext.define('NAT.form.field.Lookup', {
     },
 
     initComponent: function () {
-		if (this.designMode){
-			this.store = null;
-		}
-
         this.callParent(arguments);
 
 		if (this.designMode) return;
 
-        this.on('beforequery', this.this_beforequery, this);
+		this.on('afterrender', this.this_afterRender, this, {single: true});
+		this.on('beforequery', this.this_beforequery, this);
     },
 
-    this_beforequery: function() {
+	this_afterRender: function(){
+		var dataStore = this.dataStore;
+		var dataMember = this.dataMember;
+		this.dataStore = null;
+		this.dataMember = null;
+		this.bindDataSource(dataStore, dataMember);
+	},
+
+	bindDataSource: function(dataStore, dataMember) {
+		if (dataStore == this.dataStore && dataMember == dataMember) return;
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		this.dataStore = dataStore;
+		this.dataMember = dataMember;
+
+		if (Ext.isString(this.dataStore)){
+			//local store?
+			var natpanel = this.up('natpanel');
+			if (natpanel){
+				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
+			}
+			//global store?
+			if (Ext.isString(this.dataStore)){
+				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+			}
+		}
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		if (this.dataStore && !this.dataMember) {
+			this.superclass.bindStore.call(this, this.dataStore);
+		}
+	},
+
+	dataStore_currentmodelchanged: function(currModel){
+		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+		this.superclass.bindStore.call(this, store);
+	},
+
+	this_beforequery: function() {
        this.expand();
        return false;  //prevent clearFilter() on store, cause we have '_deleted = false' filter
                       //todo: override combobox's doQuery function to preserve our filter
@@ -1309,7 +1353,17 @@ Ext.define('NAT.form.field.Lookup', {
 
     hasErrors: function() {
         return ((this.activeErrors) && (this.activeErrors.length > 0));
-    }
+    },
+
+	getCurrent: function(){
+		var id = this.getValue();
+		if (!id) return null;
+
+		var store = this.getStore();
+		if (!store) return null;
+
+		return store.getById(id);
+	}
 });
 
 Ext.define('NAT.form.field.Number', {
@@ -2167,17 +2221,17 @@ Ext.define('NAT.grid.Panel', {
         this.dataStore = dataStore;
         this.dataMember = dataMember;
 
-        if (Ext.isString(this.dataStore)){
-            //local store?
-            var natpanel = this.up('natpanel');
-            if (natpanel){
-                this.dataStore = natpanel.stores.getByKey(this.dataStore);
-            }
-            //global store?
-            if (!this.dataStore){
-                this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
-            }
-        }
+		if (Ext.isString(this.dataStore)){
+			//local store?
+			var natpanel = this.up('natpanel');
+			if (natpanel){
+				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
+			}
+			//global store?
+			if (Ext.isString(this.dataStore)){
+				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+			}
+		}
 
         if (this.dataStore && this.dataMember) {
             this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
