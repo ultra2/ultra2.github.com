@@ -4537,7 +4537,7 @@ Ext.define('NAT.window.Window', {
 
         this.on('activate', this.this_activate, this);
 
-        this.InitEditorsBinding();
+        //this.InitEditorsBinding();
         //        this.InitFieldsBinding();
     },
 
@@ -4547,13 +4547,13 @@ Ext.define('NAT.window.Window', {
         this.isActivated = true;
     },
 
-    InitEditorsBinding: function() {
-        var editors = this.query('form');
-        for (var i = 0; i < editors.length; i++) {
-            var editor = editors[i];
-            editor.InitBinding();
-        }
-    },
+//    InitEditorsBinding: function() {
+//        var editors = this.query('form');
+//        for (var i = 0; i < editors.length; i++) {
+//            var editor = editors[i];
+//            editor.InitBinding();
+//        }
+//    },
     //
     //    InitFieldsBinding: function() {
     //        var fields = this.query('[isFormField]');
