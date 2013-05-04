@@ -1404,6 +1404,12 @@ Ext.define('NAT.form.field.Lookup', {
 		if (!store) return null;
 
 		return store.getById(id);
+	},
+
+	selectFirst: function(){
+		var store = this.getStore();
+		if (!store) return null;
+		this.setValue(store.getAt(0));
 	}
 });
 
