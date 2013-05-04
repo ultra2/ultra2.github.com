@@ -2184,34 +2184,24 @@ Ext.define('NAT.grid.Panel', {
             loadMask: false //if true after refreshing the store grid rows cant be selected
         });
 
-        this.dataStore = this.store;
-        this.store = null;
-
         this.callParent(arguments); //use empty store from Ext.data.StoreManager
 
         if (this.designMode) return;
 
-//        for (var i = 0; this.columns.length > i; i++) {
-//            var column = this.columns[i];
-//            if (column.natIsLookup) {
-//                column.on('bindstore', this.luColumn_bindstore, this);
-//            }
-//        }
-
         this.on('afterrender', this.this_afterRender, this, {single: true});
         this.on('select', this.this_select, this);
         this.on('deselect', this.this_deselect, this);
-//        this.on('afterrender', this.this_afterrender, this);
     },
 
     this_afterRender: function(){
-        var dataStore = this.dataStore;
-        this.dataStore = null;
-        this.bindStore(dataStore, this.dataMember);
+		var dataStore = this.dataStore;
+		var dataMember = this.dataMember;
+		this.dataStore = null;
+		this.dataMember = null;
+		this.bindDataSource(dataStore, dataMember);
     },
 
-    //overriden from Ext.panel.Table
-    bindStore: function(dataStore, dataMember) {
+	bindDataSource: function(dataStore, dataMember) {
         if (dataStore == this.dataStore && dataMember == dataMember) return;
 
         if (this.dataStore && this.dataMember) {
@@ -2238,7 +2228,7 @@ Ext.define('NAT.grid.Panel', {
         }
 
         if (this.dataStore && !this.dataMember) {
-            this.callParent([this.dataStore]);
+			this.superclass.bindStore.call(this, this.dataStore);
         }
     },
 
@@ -4183,10 +4173,26 @@ Ext.define('natjs.overrides.String', {
     };
 });
 
+/**
+* This is the description for my class.
+*
+* @class NAT.panel.Panel
+* @constructor
+*/
 Ext.define('NAT.panel.Panel', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.natpanel',
 
+	/**
+	* My property description.  Like other pieces of your comment blocks, 
+	* this can span multiple lines.
+	* 
+	* @property stores
+	* @type {Array}
+	* @default "[]"
+	*/
+	stores: [],
+	
     initComponent: function(){
         //before callParent bc it creates items (like grid) that needs stores created
         if (!this.designMode){
