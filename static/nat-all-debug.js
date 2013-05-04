@@ -117,6 +117,8 @@ Ext.define('NAT.tree.Panel', {
     requires: ['NAT.tree.plugin.CellEditing'],
 
     animate: false,
+	dataStore: null,
+	dataMember: null,
 
     constructor: function (config) {
         this.callParent([config]);
@@ -130,11 +132,95 @@ Ext.define('NAT.tree.Panel', {
 
         this.callParent(arguments);
 
-        this.on('select', this.tree_select, this);
+		if (this.designMode) return;
+
+
+		this.on('afterrender', this.this_afterRender, this, {single: true});
+		this.on('select', this.tree_select, this);
         this.on('deselect', this.tree_deselect, this);
     },
 
-    tree_select: function (rowModel, model) {
+	this_afterRender: function(){
+		var dataStore = this.dataStore;
+		var dataMember = this.dataMember;
+		this.dataStore = null;
+		this.dataMember = null;
+		this.bindDataSource(dataStore, dataMember);
+	},
+
+	bindDataSource: function(dataStore, dataMember) {
+		if (dataStore == this.dataStore && dataMember == dataMember) return;
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		this.dataStore = dataStore;
+		this.dataMember = dataMember;
+
+		if (Ext.isString(this.dataStore)){
+			//local store?
+			var natpanel = this.up('natpanel');
+			if (natpanel){
+				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
+			}
+			//global store?
+			if (Ext.isString(this.dataStore)){
+				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+			}
+		}
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		if (this.dataStore && !this.dataMember) {
+			this.superclass.bindStore.call(this, this.dataStore);
+		}
+	},
+
+	dataStore_currentmodelchanged: function(currModel){
+		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+		this.superclass.bindStore.call(this, store);
+	},
+
+	bindStore: function(store) {
+		if (!store) return;
+		this.store = store;
+
+		var me = this;
+		me.mon(me.store, {
+			scope: me,
+			rootchange: me.onRootChange,
+			clear: me.onClear
+		});
+
+		me.relayEvents(me.store, [
+			'beforeload',
+			'load'
+		]);
+
+		me.mon(me.store, {
+			append: me.createRelayer('itemappend'),
+			remove: me.createRelayer('itemremove'),
+			move: me.createRelayer('itemmove', [0, 4]),
+			insert: me.createRelayer('iteminsert'),
+			beforeappend: me.createRelayer('beforeitemappend'),
+			beforeremove: me.createRelayer('beforeitemremove'),
+			beforemove: me.createRelayer('beforeitemmove'),
+			beforeinsert: me.createRelayer('beforeiteminsert'),
+			expand: me.createRelayer('itemexpand', [0, 1]),
+			collapse: me.createRelayer('itemcollapse', [0, 1]),
+			beforeexpand: me.createRelayer('beforeitemexpand', [0, 1]),
+			beforecollapse: me.createRelayer('beforeitemcollapse', [0, 1])
+		});
+
+		var root = store.getRootNode();
+		if (!root) return;
+		this.view.setRootNode(root);
+	},
+
+	tree_select: function (rowModel, model) {
         if (!this.store) return;
         this.store.Select(model);
     },
@@ -142,51 +228,6 @@ Ext.define('NAT.tree.Panel', {
     tree_deselect: function (rowModel, model) {
         if (!this.store) return;
         this.store.Deselect();
-    },
-
-//    bindStore: function(store) {
-//        if (this.IsVisible()) {
-//            this.bindStore(store);
-//        } else {
-//            this.deferredBind = true;
-//            this.deferredBindStore = store;
-//        }
-//    },
-
-    bindStore: function(store) {
-        if (!store) return;
-        this.store = store;
-
-        var me = this;
-        me.mon(me.store, {
-            scope: me,
-            rootchange: me.onRootChange,
-            clear: me.onClear
-        });
-
-        me.relayEvents(me.store, [
-            'beforeload',
-            'load'
-        ]);
-
-        me.mon(me.store, {
-            append: me.createRelayer('itemappend'),
-            remove: me.createRelayer('itemremove'),
-            move: me.createRelayer('itemmove', [0, 4]),
-            insert: me.createRelayer('iteminsert'),
-            beforeappend: me.createRelayer('beforeitemappend'),
-            beforeremove: me.createRelayer('beforeitemremove'),
-            beforemove: me.createRelayer('beforeitemmove'),
-            beforeinsert: me.createRelayer('beforeiteminsert'),
-            expand: me.createRelayer('itemexpand', [0, 1]),
-            collapse: me.createRelayer('itemcollapse', [0, 1]),
-            beforeexpand: me.createRelayer('beforeitemexpand', [0, 1]),
-            beforecollapse: me.createRelayer('beforeitemcollapse', [0, 1])
-        });
-
-        var root = store.getRootNode();
-        if (!root) return;
-        this.view.setRootNode(root);
     },
 
     getSelected: function () {
@@ -1244,7 +1285,7 @@ Ext.define('NAT.form.field.Hidden', {
 
 Ext.define('NAT.form.field.HtmlEditor', {
     extend: 'Ext.form.field.HtmlEditor',
-    alias: 'widget.htmleditor',
+    alias: 'widget.nathtmleditor',
 
     validateOnChange: false,
     validateOnBlur: false,
@@ -1799,10 +1840,6 @@ Ext.define('NAT.form.Panel', {
     isChanging: false,
 
     initComponent: function () {
-
-		this.dataStore = this.store;
-		this.store = null;
-
 		this.callParent(arguments);
 
 		if (this.designMode) return;
@@ -1813,11 +1850,13 @@ Ext.define('NAT.form.Panel', {
 
 	this_afterRender: function(){
 		var dataStore = this.dataStore;
+		var dataMember = this.dataMember;
 		this.dataStore = null;
-		this.bindStore(dataStore, this.dataMember);
+		this.dataMember = null;
+		this.bindDataSource(dataStore, dataMember);
 	},
 
-	bindStore: function(dataStore, dataMember) {
+	bindDataSource: function(dataStore, dataMember) {
 		if (dataStore == this.dataStore && dataMember == dataMember) return;
 
 		if (this.dataStore && this.dataMember) {
@@ -1831,10 +1870,10 @@ Ext.define('NAT.form.Panel', {
 			//local store?
 			var natpanel = this.up('natpanel');
 			if (natpanel){
-				this.dataStore = natpanel.stores.getByKey(this.dataStore);
+				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
 			}
 			//global store?
-			if (!this.dataStore){
+			if (Ext.isString(this.dataStore)){
 				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
 			}
 		}
@@ -1844,17 +1883,44 @@ Ext.define('NAT.form.Panel', {
 		}
 
 		if (this.dataStore && !this.dataMember) {
-			this.store = this.dataStore;
-			this.InitBinding();
+			this.bindStore.call(this, this.dataStore);
 		}
 	},
 
 	dataStore_currentmodelchanged: function(currModel){
-		this.store =  (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
-		this.InitBinding();
+		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+		this.bindStore.call(this, store);
 	},
 
-    UpdateChildren: function() {
+	bindStore: function(store) {
+		if (!store) return;
+		this.store = store;
+
+		this.mon(this.store, 'currentmodelchanged', function(model) {
+			this.ReadAllValue();
+		}, this);
+
+		this.mon(this.store, 'update', function(store, model, operation, modifiedFieldNames) {
+			//not embedded model?
+			//no modifiedFieldNames on commit operation...
+			if (model == this.store.currModel && modifiedFieldNames && modifiedFieldNames.length>0) {
+				this.ReadValue(modifiedFieldNames[0], model.get(modifiedFieldNames[0]));
+			}
+		}, this);
+
+		for (var i = 0; this.children.length > i; i++) {
+			var child = this.children[i];
+			if (child.isFormField) {
+				child.on('change', this.WriteValue, this);
+//                child.on('getErrors', this.field_getErrors, this);
+				child.on('blur', this.field_blur, this);
+			}
+		}
+
+		this.ReadAllValue();
+	},
+
+	UpdateChildren: function() {
         this.children = [];
         this.UpdateChildren_req(this);
     },
@@ -1870,33 +1936,6 @@ Ext.define('NAT.form.Panel', {
             else if (item.$className === 'NAT.tree.Panel') this.children.push(item);
             else this.UpdateChildren_req(item);
         }
-    },
-
-    InitBinding: function () {
-        if (!this.store) return;
-
-        this.mon(this.store, 'currentmodelchanged', function(model) {
-            this.ReadAllValue();
-        }, this);
-
-        this.mon(this.store, 'update', function(store, model, operation, modifiedFieldNames) {
-            //not embedded model?
-            //no modifiedFieldNames on commit operation...
-            if (model == this.store.currModel && modifiedFieldNames && modifiedFieldNames.length>0) {
-                this.ReadValue(modifiedFieldNames[0], model.get(modifiedFieldNames[0]));
-            }
-        }, this);
-
-        for (var i = 0; this.children.length > i; i++) {
-            var child = this.children[i];
-            if (child.isFormField) {
-                child.on('change', this.WriteValue, this);
-//                child.on('getErrors', this.field_getErrors, this);
-                child.on('blur', this.field_blur, this);
-            }
-        }
-
-        this.ReadAllValue();
     },
 
     field_blur: function(field, op) {
@@ -4191,7 +4230,7 @@ Ext.define('NAT.panel.Panel', {
 	* @type {Array}
 	* @default "[]"
 	*/
-	stores: [],
+	//stores: [],
 	
     initComponent: function(){
         //before callParent bc it creates items (like grid) that needs stores created
