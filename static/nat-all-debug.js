@@ -4260,7 +4260,28 @@ Ext.define('NAT.panel.Panel', {
             store = Ext.create('widget.' + xtype, store);
             me.stores.add(store.itemId, store);
         }
-    }
+    },
+
+	load: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.load(null, done, me);
+			},
+			function(data, err){
+				me.RefreshUI();
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reload: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+			store.reload(null, done, me);
+		},
+		function(data, err){
+			Ext.callback(callback, scope, [err, null], 0);
+		})
+	}
 });
 
 Ext.define('NAT.toolbar.Command', {
