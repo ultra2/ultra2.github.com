@@ -4587,9 +4587,8 @@ Ext.define('NAT.window.Window', {
     }
 });
 
-Ext.define('NAT.data.Model', {
+Ext.define('NAT.data.model.Abstract', {
     extend: 'Ext.data.Model',
-    alias: 'widget.natdatamodel',
 
     fields: [
         { name: '_id', type: 'string' },
@@ -4836,8 +4835,8 @@ Ext.define('NAT.data.Model', {
     }
 });
 
-Ext.define('NAT.data.PersistentModel', {
-    extend: 'NAT.data.Model',
+Ext.define('NAT.data.model.Persistent', {
+    extend: 'NAT.data.model.Abstract',
 
     fields: [
         { name: '_created', type: 'date' },
@@ -4854,8 +4853,8 @@ Ext.define('NAT.data.PersistentModel', {
     }
 });
 
-Ext.define('NAT.data.QueryModel', {
-    extend: 'NAT.data.Model',
+Ext.define('NAT.data.model.Query', {
+    extend: 'NAT.data.model.Abstract',
 
     fields: [
         { name: '_created', type: 'date' },
@@ -4872,8 +4871,8 @@ Ext.define('NAT.data.QueryModel', {
     }
 });
 
-Ext.define('NAT.data.RequestModel', {
-    extend: 'NAT.data.Model',
+Ext.define('NAT.data.model.Request', {
+    extend: 'NAT.data.model.Abstract',
 
     fields: [
     ],
@@ -4886,8 +4885,8 @@ Ext.define('NAT.data.RequestModel', {
     }
 });
 
-Ext.define('NAT.data.ClientModel', {
-    extend: 'NAT.data.Model',
+Ext.define('NAT.data.model.Client', {
+    extend: 'NAT.data.model.Abstract',
 
     fields: [
     ],
@@ -4900,8 +4899,8 @@ Ext.define('NAT.data.ClientModel', {
     }
 });
 
-Ext.define('NAT.data.ComponentModel', {
-    extend: 'NAT.data.Model',
+Ext.define('NAT.data.model.Component', {
+    extend: 'NAT.data.model.Abstract',
 
     fields: [
     ],
@@ -4914,8 +4913,8 @@ Ext.define('NAT.data.ComponentModel', {
     }
 });
 
-Ext.define('NAT.data.LookupModel', {
-    extend: 'NAT.data.Model',
+Ext.define('NAT.data.model.Lookup', {
+    extend: 'NAT.data.model.Abstract',
 
     fields: [
         { name: '_created', type: 'date' },
@@ -4941,7 +4940,7 @@ Ext.define('NAT.data.proxy.Ajax', {
     constructor: function (config) {
         var defaultConfig = {
             type: 'ajax',
-            model: 'NAT.data.Model',   //required!!! otherwise reader and writer cant be set!!!
+            model: 'NAT.data.model.Abstract',   //required!!! otherwise reader and writer cant be set!!!
             batchActions: false,
             reader: {
                 type: 'json',
