@@ -4353,22 +4353,22 @@ Ext.define('NAT.tab.Panel', {
 	load: function(op, callback, scope) {
 		var me = this;
 		async.forEach(me.stores.getRange(), function(store, done){
-				store.load(null, done, me);
-			},
-			function(data, err){
-				me.RefreshUI();
-				Ext.callback(callback, scope, [err, null], 0);
-			})
+			store.load(null, done, me);
+		},
+		function(data, err){
+			me.RefreshUI();
+			Ext.callback(callback, scope, [err, null], 0);
+		})
 	},
 
 	reload: function(op, callback, scope) {
 		var me = this;
 		async.forEach(me.stores.getRange(), function(store, done){
-				store.reload(null, done, me);
-			},
-			function(data, err){
-				Ext.callback(callback, scope, [err, null], 0);
-			})
+			store.reload(null, done, me);
+		},
+		function(data, err){
+			Ext.callback(callback, scope, [err, null], 0);
+		})
 	},
 
 	reject: function(){
