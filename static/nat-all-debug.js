@@ -4480,183 +4480,6 @@ Ext.define('NAT.toolbar.Command', {
 //    }
 });
 
-Ext.define('NAT.view.MessageDialog', {
-    extend: 'Ext.window.Window',
-    alias: 'widget.natmessagedialog',
-
-    width: 500,
-    height: 250,
-    resizable: false,
-    closable: false,
-    layout: {
-        align: 'top',
-        type: 'hbox'
-    },
-    modal: true,
-    bodyPadding: 10,
-
-    callback: null,
-    scope: null,
-
-    initComponent: function () {
-        this.items = [
-            {
-                xtype: 'image',
-                itemId: 'img',
-                height: 70,
-                width: 70,
-                flex: 0
-            },
-            {
-                xtype: 'component',
-                itemId: 'lMessage',
-                margin: '10 10 10 10',
-                flex: 1
-            }
-        ];
-        this.dockedItems = [
-            {
-                xtype: 'container',
-                height: 50,
-                cls: 'commandpanel',
-                layout: {
-                    align: 'stretch',
-                    padding: 10,
-                    type: 'hbox'
-                },
-                dock: 'bottom',
-                defaults: {
-                    flex: 1,
-                    margin: '0 5',
-                    hidden: true
-                },
-                items: [
-                    {
-                        xtype: 'button',
-                        itemId: 'btnSave',
-                        ui: 'green',
-                        text: 'Save',
-                        result: 'save'
-                    },
-                    {
-                        xtype: 'button',
-                        itemId: 'btnDontSave',
-                        ui: 'blue',
-                        text: "Don't Save",
-                        result: 'dontsave'
-                    },
-                    {
-                        xtype: 'button',
-                        itemId: 'btnOk',
-                        ui: 'green',
-                        text: 'Ok',
-                        result: 'ok'
-                    },
-                    {
-                        xtype: 'button',
-                        itemId: 'btnYes',
-                        ui: 'green',
-                        text: 'Yes',
-                        result: 'yes'
-                    },
-                    {
-                        xtype: 'button',
-                        itemId: 'btnNo',
-                        ui: 'blue',
-                        text: 'No',
-                        result: 'no'
-                    },
-                    {
-                        xtype: 'button',
-                        itemId: 'btnCancel',
-                        ui: 'gray',
-                        text: 'Cancel',
-                        result: 'cancel'
-                    }
-                ]
-            }
-        ];
-
-        this.callParent(arguments);
-
-        this.down('#btnSave').on('click', this.btn_click, this);
-        this.down('#btnDontSave').on('click', this.btn_click, this);
-        this.down('#btnOk').on('click', this.btn_click, this);
-        this.down('#btnYes').on('click', this.btn_click, this);
-        this.down('#btnNo').on('click', this.btn_click, this);
-        this.down('#btnCancel').on('click', this.btn_click, this);
-    },
-
-    showModal: function (config, callback, scope) {
-        this.callback = callback;
-        this.scope = scope;
-
-        config = config || {};
-        config.type = config.type || 'success';
-        config.msg = config.msg || '';
-
-        var img = this.down('#img');
-        var lMessage = this.down('#lMessage');
-
-        var btnSave = this.down('#btnSave');
-        var btnDontSave = this.down('#btnDontSave');
-        var btnOk = this.down('#btnOk');
-        var btnYes = this.down('#btnYes');
-        var btnNo = this.down('#btnNo');
-        var btnCancel = this.down('#btnCancel');
-
-        if (config.type == 'message') {
-            this.setTitle(config.type);
-            img.setSrc('/natjs/resources/images/message.png');
-            btnOk.setVisible(true);
-        }
-        if (config.type == 'success') {
-            this.setTitle(config.type);
-            img.setSrc('/natjs/resources/images/message.png');
-            btnOk.setVisible(true);
-        }
-        else if (config.type == 'failure') {
-            this.setTitle(config.type);
-            img.setSrc('/natjs/resources/images/error.png');
-            btnOk.setVisible(true);
-        }
-        else if (config.type == 'confirm') {
-            this.setTitle(config.type);
-            img.setSrc('/natjs/resources/images/warning.png');
-            btnYes.setVisible(true);
-            btnNo.setVisible(true);
-        }
-        else if (config.type == 'confirmexit') {
-            this.setTitle('confirm');
-            img.setSrc('/natjs/resources/images/warning.png');
-            btnSave.setVisible(true);
-            btnDontSave.setVisible(true);
-            btnCancel.setVisible(true);
-        }
-        else if (config.type == 'error') {
-            this.setTitle(config.type);
-            img.setSrc('/natjs/resources/images/error.png');
-            btnOk.setVisible(true);
-        }
-        else if (config.type == 'custom') {
-            this.setTitle(config.title);
-            img.setSrc('/natjs/resources/images/' + config.image + '.png');
-            btnOk.setVisible(true);
-            btnCancel.setVisible(true);
-            btnOk.setText(config.okButtonText);
-        }
-
-        lMessage.html = config.msg;
-
-        this.show();
-    },
-
-    btn_click: function (button) {
-        Ext.callback(this.callback, this.scope, [null, { result: button.result }], 0); //by delay 0ms close happen first before callback!
-        this.close();
-    }
-});
-
 Ext.define('NAT.window.Window', {
     extend: 'Ext.window.Window',
     alias: 'widget.natwindow',
@@ -5123,8 +4946,6 @@ Ext.define('NAT.data.proxy.Ajax', {
     extend: 'Ext.data.proxy.Ajax',
     alias: 'widget.natajaxproxy',
 
-    requires: ['NAT.view.MessageDialog'],
-
     mergeClientRecords: true,
 
     constructor: function (config) {
@@ -5379,29 +5200,21 @@ Ext.define('NAT.data.proxy.Ajax', {
     },
 
     this_exception: function(proxy, response, operation, op){
-        var msg, type;
+        var msg;
 
         if (!operation) { //request error
             if (response.result) {
                 msg = response.result.message;
-                type = 'failure';
             } else {
                 msg = response.responseText;
-                type = 'error';
             }
         } else if (typeof operation.error == 'object') { //system error
             msg = operation.error.statusText;
-            type = 'error';
         } else {
             msg = operation.error;
-            type = 'failure';
         }
 
-        var dlg = Ext.create('NAT.view.MessageDialog');
-        dlg.showModal({
-            type: type,
-            msg: msg
-        });
+		alert(msg);
     }
 });
 
@@ -5416,7 +5229,53 @@ Ext.define('NAT.data.store.Abstract', {
         this.on('datachanged', this.updateCurrModel, this);
     },
 
-    Select: function (model, suppressEvent) {
+	filterNew: function(item) {
+		return (item.isNew() && item.isNATValid);
+	},
+	filterNewAll: function(item) {
+		return item.isNew();
+	},
+	filterUpdated: function(item) {
+		return (!item.isNew() && item.isNATDirty && item.isNATValid);
+	},
+	filterUpdatedAll: function(item) {
+		return (!item.isNew() && item.isNATDirty);
+	},
+
+	getNewRecords: function() {
+		return this.data.filterBy(this.filterNew).items;
+	},
+	getUpdatedRecords: function() {
+		return this.data.filterBy(this.filterUpdated).items;
+	},
+	getNewRecordsAll: function() {
+		return this.data.filterBy(this.filterNewAll).items;
+	},
+	getUpdatedRecordsAll: function() {
+		return this.data.filterBy(this.filterUpdatedAll).items;
+	},
+
+	GetChangedModels: function () {
+		return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
+	},
+	GetChangedModelsAll: function () {
+		return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
+	},
+
+	IsChanged: function () {
+		return (this.GetChangedModelsAll().length != 0);
+	},
+
+	ValidateChangedModels: function(op, callback, scope) {
+		async.forEach(this.GetChangedModelsAll(), function(model, done) {
+			model.ValidateModel(null, done, model);
+		},
+		function(err){
+			Ext.callback(callback, scope, [err, null], 0);
+		});
+	},
+
+	Select: function (model, suppressEvent) {
         if (this.currModel == model) return;
 
         if (!suppressEvent) {
@@ -5470,8 +5329,7 @@ Ext.define('NAT.data.store.Client', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.componentModel,
-			collection: app.GetModelNameWithoutNamespace(config.componentModel)
+			model: config.clientModel
 		});
 		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
@@ -5511,8 +5369,7 @@ Ext.define('NAT.data.store.Component', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.componentModel,
-			collection: app.GetModelNameWithoutNamespace(config.componentModel)
+			model: config.componentModel
 		});
 		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
@@ -5552,13 +5409,9 @@ Ext.define('NAT.data.store.Lookup', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.queryModel,
-			collection: app.GetModelNameWithoutNamespace(config.queryModel),
+			model: config.lookupModel,
 			api: {
-				read: app.baseUrl + 'data/read',
-				create: app.baseUrl + 'data/create',
-				update: app.baseUrl + 'data/update',
-				destroy: app.baseUrl + 'data/destroy'
+				read: app.baseUrl + 'lookup/read'
 			},
 			mergeClientRecords: false
 		});
@@ -5583,9 +5436,9 @@ Ext.define('NAT.data.store.Lookup', {
 
 		options.params = options.params || {};
 		options.params.lastModified = options.params.lastModified || new Date(0);
-		options.params.collection = options.params.collection || this.collection;
+		options.params.lookupModel = app.GetModelNameWithoutNamespace(this.lookupModel);
 
-		if (!options || !options.params || !options.params.collection){
+		if (!options || !options.params || !options.params.lookupModel){
 			Ext.callback(callback, scope, [{ message: message }, null], 0);
 			return;
 		}
@@ -5765,31 +5618,17 @@ Ext.define('NAT.data.store.Persistent', {
 		config = config || {};
 		Ext.applyIf(config, {
 			model: config.persistentModel,
-			collection: app.GetModelNameWithoutNamespace(config.persistentModel),
 			api: {
-				read: app.baseUrl + 'data/read',
-				create: app.baseUrl + 'data/create',
-				update: app.baseUrl + 'data/update',
-				destroy: app.baseUrl + 'data/destroy'
+				read: app.baseUrl + 'persistent/read',
+				create: app.baseUrl + 'persistent/create',
+				update: app.baseUrl + 'persistent/update',
+				destroy: app.baseUrl + 'persistent/destroy'
 			},
 			mergeClientRecords: false
 		});
 		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
 		this.callParent([config]);
-	},
-
-	getNewRecords: function() {
-		return this.data.filterBy(this.filterNew).items;
-	},
-	getUpdatedRecords: function() {
-		return this.data.filterBy(this.filterUpdated).items;
-	},
-	getNewRecordsAll: function() {
-		return this.data.filterBy(this.filterNewAll).items;
-	},
-	getUpdatedRecordsAll: function() {
-		return this.data.filterBy(this.filterUpdatedAll).items;
 	},
 
 	load: function (options, callback, scope) {
@@ -5808,10 +5647,10 @@ Ext.define('NAT.data.store.Persistent', {
 
 		options.params = options.params || {};
 		options.params.lastModified = options.params.lastModified || new Date(0);
-		options.params.collection = options.params.collection || this.collection;
+		options.params.persistentModel = app.GetModelNameWithoutNamespace(this.persistentModel);
 
-		if (!options || !options.params || !options.params.collection){
-			Ext.callback(callback, scope, [{ message: message }, null], 0);
+		if (!options || !options.params || !options.params.persistentModel){
+			Ext.callback(callback, scope, [{ message: 'options not valid' }, null], 0);
 			return;
 		}
 
@@ -6106,39 +5945,6 @@ Ext.define('NAT.data.store.Persistent', {
 		this.Select(null);
 	},
 
-	filterNew: function(item) {
-		return (item.isNew() && item.isNATValid);
-	},
-	filterNewAll: function(item) {
-		return item.isNew();
-	},
-	filterUpdated: function(item) {
-		return (!item.isNew() && item.isNATDirty && item.isNATValid);
-	},
-	filterUpdatedAll: function(item) {
-		return (!item.isNew() && item.isNATDirty);
-	},
-
-	GetChangedModels: function () {
-		return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
-	},
-	GetChangedModelsAll: function () {
-		return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
-	},
-
-	IsChanged: function () {
-		return (this.GetChangedModelsAll().length != 0);
-	},
-
-	ValidateChangedModels: function(op, callback, scope) {
-		async.forEach(this.GetChangedModelsAll(), function(model, done) {
-			model.ValidateModel(null, done, model);
-		},
-		function(err){
-			Ext.callback(callback, scope, [err, null], 0);
-		});
-	},
-
 	//model calls it from callStore
 	OnModelDirtyChanged: function (model){
 		this.fireEvent('modeldirtychanged', model);
@@ -6155,12 +5961,8 @@ Ext.define('NAT.data.store.Query', {
 		config = config || {};
 		Ext.applyIf(config, {
 			model: config.queryModel,
-			collection: app.GetModelNameWithoutNamespace(config.queryModel),
 			api: {
-				read: app.baseUrl + 'data/read',
-				create: app.baseUrl + 'data/create',
-				update: app.baseUrl + 'data/update',
-				destroy: app.baseUrl + 'data/destroy'
+				read: app.baseUrl + 'query/read'
 			},
 			mergeClientRecords: false
 		});
@@ -6185,9 +5987,9 @@ Ext.define('NAT.data.store.Query', {
 
 		options.params = options.params || {};
 		options.params.lastModified = options.params.lastModified || new Date(0);
-		options.params.collection = options.params.collection || this.collection;
+		options.params.queryModel = app.GetModelNameWithoutNamespace(this.queryModel);
 
-		if (!options || !options.params || !options.params.collection){
+		if (!options || !options.params || !options.params.queryModel){
 			Ext.callback(callback, scope, [{ message: message }, null], 0);
 			return;
 		}
@@ -6376,6 +6178,7 @@ Ext.define('NAT.data.store.Request', {
 	sendRequest: function(op, callback, scope) {
 		op = op || {};
 		Ext.applyIf(op, {
+			url: app.baseUrl + 'request',
 			jsonData: this.currModel
 		});
 		this.proxy.NATRequest(op, callback, scope);
@@ -6394,60 +6197,51 @@ Ext.define('NAT.data.treestore.Abstract', {
         this.on('datachanged', this.updateCurrModel, this);
     },
 
-    OnMove: function (model, oldParent, newParent) {
-        if (oldParent != newParent) {
-            oldParent.updateInfo(false);
-        }
-        newParent.updateInfo(false);
-    },
+	filterNew: function(item) {
+		return (item.isNew() && item.isNATValid);
+	},
+	filterNewAll: function(item) {
+		return item.isNew();
+	},
+	filterUpdated: function(item) {
+		return (!item.isNew() && item.isNATDirty && item.isNATValid);
+	},
+	filterUpdatedAll: function(item) {
+		return (!item.isNew() && item.isNATDirty);
+	},
 
-    setRootNode: function(root, /* private */ preventLoad) {
-        var me = this,
-            model = me.model,
-            idProperty = model.prototype.idProperty
+	getNewRecords: function() {
+		return Ext.Array.filter(this.tree.flatten(), this.filterNew);
+	},
+	getUpdatedRecords: function() {
+		return Ext.Array.filter(this.tree.flatten(), this.filterUpdated);
+	},
+	getNewRecordsAll: function() {
+		return Ext.Array.filter(this.tree.flatten(), this.filterNewAll);
+	},
+	getUpdatedRecordsAll: function() {
+		return Ext.Array.filter(this.tree.flatten(), this.filterUpdatedAll);
+	},
 
-        root = root || {};
-        if (!root.isModel) {
-            // create a default rootNode and create internal data struct.
-            Ext.applyIf(root, {
-                id: me.defaultRootId,
-                text: 'Root',
-                allowDrag: false
-            });
-            if (root[idProperty] === undefined) {
-                root[idProperty] = me.defaultRootId;
-            }
-            Ext.data.NodeInterface.decorate(model);
-            root = Ext.ModelManager.create(root, model);
-        } else if (root.isModel && !root.isNode) {
-            Ext.data.NodeInterface.decorate(model);
-        }
+	GetChangedModels: function () {
+		return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
+	},
+	GetChangedModelsAll: function () {
+		return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
+	},
 
-        //IZS: to force decoration in setRootNode, appendChild ect:
-        Ext.data.NodeInterface.decorate(root);
-        //IZS end
+	IsChanged: function () {
+		return (this.GetChangedModelsAll().length != 0);
+	},
 
-
-        // Because we have decorated the model with new fields,
-        // we need to build new extactor functions on the reader.
-        me.getProxy().getReader().buildExtractors(true);
-
-        // When we add the root to the tree, it will automaticaly get the NodeInterface
-        me.tree.setRootNode(root);
-
-//IZS begin
-//        if (preventLoad !== true && !root.isLoaded() && (me.autoLoad === true || root.isExpanded())) {
-//            me.load({
-//                node: root
-//            });
-//        }
-
-        root.join(this);
-		this.Select(root, true);
-//IZS end
-
-        return root;
-    },
+	ValidateChangedModels: function(op, callback, scope) {
+		async.forEach(this.GetChangedModelsAll(), function(model, done) {
+			model.ValidateModel(null, done, model);
+		},
+		function(err){
+			Ext.callback(callback, scope, [err, null], 0);
+		});
+	},
 
     Select: function (model, suppressEvent) {
 		if (!model){
@@ -6495,7 +6289,62 @@ Ext.define('NAT.data.treestore.Abstract', {
 
     OnCurrentModelChanged: function () {
         this.fireEvent('currentmodelchanged', this.currModel);
-    }
+    },
+
+	OnMove: function (model, oldParent, newParent) {
+		if (oldParent != newParent) {
+			oldParent.updateInfo(false);
+		}
+		newParent.updateInfo(false);
+	},
+
+	setRootNode: function(root, /* private */ preventLoad) {
+		var me = this,
+			model = me.model,
+			idProperty = model.prototype.idProperty
+
+		root = root || {};
+		if (!root.isModel) {
+			// create a default rootNode and create internal data struct.
+			Ext.applyIf(root, {
+				id: me.defaultRootId,
+				text: 'Root',
+				allowDrag: false
+			});
+			if (root[idProperty] === undefined) {
+				root[idProperty] = me.defaultRootId;
+			}
+			Ext.data.NodeInterface.decorate(model);
+			root = Ext.ModelManager.create(root, model);
+		} else if (root.isModel && !root.isNode) {
+			Ext.data.NodeInterface.decorate(model);
+		}
+
+		//IZS: to force decoration in setRootNode, appendChild ect:
+		Ext.data.NodeInterface.decorate(root);
+		//IZS end
+
+
+		// Because we have decorated the model with new fields,
+		// we need to build new extactor functions on the reader.
+		me.getProxy().getReader().buildExtractors(true);
+
+		// When we add the root to the tree, it will automaticaly get the NodeInterface
+		me.tree.setRootNode(root);
+
+//IZS begin
+//        if (preventLoad !== true && !root.isLoaded() && (me.autoLoad === true || root.isExpanded())) {
+//            me.load({
+//                node: root
+//            });
+//        }
+
+		root.join(this);
+		this.Select(root, true);
+//IZS end
+
+		return root;
+	}
 });
 
 Ext.define('NAT.data.treestore.Client', {
@@ -6504,399 +6353,15 @@ Ext.define('NAT.data.treestore.Client', {
 
     requires: ['NAT.data.proxy.Ajax'],
 
-    collection: null,
-    saving: false,
-
     constructor: function (config) {
         config = config || {};
         Ext.applyIf(config, {
-            model: 'NAT.data.Model',
-            api: {
-                read: app.baseUrl + 'data/read',
-                create: app.baseUrl + 'data/create',
-                update: app.baseUrl + 'data/update',
-                destroy: app.baseUrl + 'data/destroy'
-            },
-            mergeClientRecords: false
+			model: config.clientModel
         });
         this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
         this.callParent([config]);
     },
-
-    getNewRecords: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterNew);
-    },
-    getUpdatedRecords: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterUpdated);
-    },
-    getNewRecordsAll: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterNewAll);
-    },
-    getUpdatedRecordsAll: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterUpdatedAll);
-    },
-
-    load: function (options, callback, scope) {
-        var me = this;
-
-        if (me.loading) {
-            Ext.callback(callback, scope, [null, null], 0);
-            return;
-        }
-
-        options = Ext.applyIf({
-            callback: callback,
-            scope: scope,
-            addRecords: 'merge'
-        }, options);
-
-        options.params = options.params || {};
-        options.params.lastModified = options.params.lastModified || new Date(0);
-        options.params.collection = options.params.collection || this.collection;
-
-        if (!options || !options.params || !options.params.collection){
-            Ext.callback(callback, scope, [{ message: 'options not valid' }, null], 0);
-            return;
-        }
-
-        //Ignore Ext.data.TreeStore load method
-        return this.superclass.superclass.load.call(this, options);
-    },
-
-    reload: function(options, callback, scope) {
-        return this.load(Ext.apply(this.lastOptions, options), callback, scope);
-    },
-
-    onProxyLoad: function (operation) {
-        var me = this,
-            successful = operation.wasSuccessful(),
-            records = operation.getRecords();
-
-        me.loading = false;
-        if (successful) {
-            var firstLoad = this.lastOptions.params.lastModified.getTime() == new Date(0).getTime();
-            if (firstLoad) {
-                this.BuildStore(records);
-            }
-            else {
-                this.MergeModels(records);
-            }
-
-            for (i=0; i < records.length; i++) {
-                var model = records[i];
-                var _modified = model.get('_modified');
-                if (_modified > this.lastOptions.params.lastModified) {
-                    this.lastOptions.params.lastModified = _modified;
-                }
-            }
-        }
-
-        me.fireEvent('read', me, operation.node, records, successful);
-        me.fireEvent('load', me, operation.node, records, successful);
-
-//IZS make callback result data compatible with async library
-//        Ext.callback(operation.callback, operation.scope || me, [records, operation, successful]);
-        Ext.callback(operation.callback, operation.scope || me, [null, {records: records, operation: operation, successful: successful}]);
-    },
-
-    save: function (op, callback, scope) {
-        if (this.saving) {
-            Ext.callback(callback, scope, [null, null], 0);
-            return;
-        }
-
-        this.saving = true;
-
-        var me = this;
-        async.waterfall([
-            function(cb){
-                me.ValidateChangedModels(null, cb, me);
-            },
-            function(result, cb){
-                var options = {
-                    scope: me,
-                    success: function(batch, options) {
-                        cb(null, options);
-                    },
-                    failure: function(batch, options) {
-                        cb('failure', options);
-                    }
-                };
-
-                me.sync(options);
-
-                if (!options.operations){
-                    cb(null, options);
-                    return;
-                }
-
-                if ((options.operations) && (!options.preventLoadingMask)) {
-                    app.ShowLoadingMask();
-                }
-            }
-        ],
-        function(err, options) {
-            me.saving = false;
-
-            if (err) {
-                alert("validation error, field: " + err.getAt(0).field);
-            }
-
-            options = options || {};
-            if ((options.operations) && (!options.preventLoadingMask)) {
-                app.HideLoadingMask();
-            }
-
-            Ext.callback(callback, scope, [null, options], 0);
-        });
-    },
-
-    //overridden!!! (Server sends the modified models back here)
-    onCreateRecords: function(records, operation, success) {
-        if (!success) return;
-
-        var sentRecords = operation.resultSet.records;
-
-        for (var i= 0; i < sentRecords.length; ++i) {
-            var record = sentRecords[i];
-            var original = operation.records[i];
-            if (original) {
-                this.tree.unregisterNode(original, false);
-                original.setId(record.getId());
-                this.tree.registerNode(original, false);
-            }
-        }
-    },
-
-    //overridden!!! (Server sends the modified models back here)
-    onUpdateRecords: function (records, operation, success) {
-    },
-
-    onDestroyRecords: function(records, operation, success){
-        if (success) {
-            this.removed = [];
-        }
-    },
-
-    remove: function (model, destroy) {
-        if (!model.parentNode) return;
-        model.parentNode.removeChild(model, destroy);
-    },
-
-    reject: function (silent) {
-        var changedModels = this.GetChangedModelsAll();
-        var count = changedModels.length;
-
-        for (var i = 0; i < count; i++) {
-            var model = changedModels[i];
-            if (model.get('loaded')) {
-                model.reject(silent);
-            }
-            else {
-                model.isReplace = true;
-                model.parentNode.removeChild(model);
-                model.isReplace = false;
-            }
-        }
-        this.commit();
-    },
-
-    commit: function (silent) {
-        var changedModels = this.GetChangedModelsAll();
-        var count = changedModels.length;
-
-        for (var i = 0; i < count; i++) {
-            var model = changedModels[i];
-            model.commit(silent);
-        }
-    },
-
-    BuildStore: function (models) {
-//        this.removeAll();
-
-        var result = this.GetChildByParentId(models, '');
-        if (result.length != 1) {
-            //alert('No Root!');
-            return;
-        }
-        var rootModel = result[0];
-        rootModel.beginEdit();
-        rootModel.set('loaded', true);  //for Extjs compatibility
-        this.setRootNode(rootModel);
-        rootModel.endEdit(true);
-        rootModel.commit();
-
-        this.BuildStoreReq(models, rootModel);
-
-        this.builded = true;
-    },
-
-    BuildStoreReq: function (models, parentNode) {
-        var children = this.GetChildByParentId(models, parentNode.getId());
-        if (children.length == 0) return;
-
-        children.sort(function (a, b) { return a.get('index') - b.get('index'); });
-
-        for (var i = 0; i < children.length; i++) {
-            var child = children[i];
-            child.beginEdit();
-            child.set('loaded', true);  //for Extjs compatibility
-            if (!child.get('_deleted')) {
-                parentNode.beginEdit();
-                parentNode.appendChild(child);
-                parentNode.endEdit(true);
-                parentNode.commit();
-                this.BuildStoreReq(models, child);
-            }
-            child.endEdit(true);
-            child.commit();
-        }
-    },
-
-    GetChildByParentId: function (models, parentId) {
-        var result = [];
-
-        for (var i = 0; i < models.length; i++) {
-            var model = models[i];
-            if (model.get('parentId') == parentId) {
-                result[result.length] = model;
-            }
-        }
-
-        return result;
-    },
-
-    MergeModels: function (models) {
-        models.sort(function (a, b) { return a.get('index') - b.get('index'); });
-        for (var i = 0; i < models.length; i++) {
-            models[i].merged = false;
-        }
-        var mergedModelsCount = this.GetMergedModelsCount(models);
-        while (mergedModelsCount < models.length) {
-            for (i = 0; i < models.length; i++) {
-                var model = models[i];
-                if (model.merged) continue;
-                if (this.MergeModel(model)) {
-                    model.merged = true;
-                }
-            }
-
-            var newMergedModelsCount = this.GetMergedModelsCount(models);
-            if (newMergedModelsCount == mergedModelsCount) break; //prevent infinite loop!
-            mergedModelsCount = newMergedModelsCount;
-        }
-    },
-
-    GetMergedModelsCount: function (models) {
-        var result = 0;
-        for (var i = 0; i < models.length; i++) {
-            if (models[i].merged) {
-                result += 1;
-            }
-        }
-        return result;
-    },
-
-    MergeModel: function (model) {
-        var parentId = model.get('parentId'),
-            index = model.get('index'),
-            _deleted = model.get('_deleted');
-
-        if (!parentId) { //root node
-            var root = this.getRootNode();
-            root.beginEdit();
-            Ext.apply(model.data, {
-                root: true,
-                isFirst: true,
-                isLast: true,
-                depth: 0,
-                expanded: root.get('expanded'),
-                loaded: true //for Extjs compatibility
-            });
-            root.Merge(model);
-            root.endEdit(true);
-            root.commit();
-            return true;
-        }
-
-        var parent = this.tree.getNodeById(parentId);
-        if (!parent) return false; //merge the parent first
-
-        var nodeBefore = parent.getChildAt(index);
-
-        var original = this.tree.getNodeById(model.getId());
-        if (_deleted) { //removed node
-            if (original) {
-                original.isReplace = true; //prevent being added to the removed cache
-                original.parentNode.removeChild(original);
-                original.isReplace = false;
-            }
-            return true;
-        }
-
-        if (!original) {  //new node
-            Ext.data.NodeInterface.decorate(model);
-			model.beginEdit();
-            parent.insertBefore(model, nodeBefore);
-            parent.updateInfo(false); //it updates children's indexes recursively
-			model.set('loaded', true); //for Extjs compatibility
-			model.endEdit(true);
-			model.commit();
-            return true;
-        }
-
-        //updated node
-        if ((original.get('parentId') == parentId) &&
-            (original.get('index') == index)) {
-            original.beginEdit();
-            Ext.apply(model.data, {
-                root: false,
-                isFirst: original.get('isFirst'),
-                isLast: original.get('isLast'),
-                depth: original.get('depth'),
-                expanded: original.get('expanded'),
-                loaded: true //for Extjs compatibility
-            });
-            original.Merge(model);
-            original.endEdit(true);
-            original.commit();
-            return true;
-        }
-
-        //updated node changed parent or index
-        original.beginEdit();
-        original.isReplace = true; //prevent being added to the removed cache
-        original.parentNode.removeChild(original);
-        original.isReplace = false;
-
-        Ext.apply(model.data, {
-            loaded: true //for Extjs compatibility
-        });
-        original.Merge(model);
-
-        parent.insertBefore(original, nodeBefore);
-        parent.updateInfo(false); //it updates children's indexes recursively
-
-        original.endEdit(true);
-        original.commit();
-
-        return true;
-    },
-
-	//not push new records into removed[]
-	onNodeRemove: function(parent, node, isMove) {
-		var me = this,
-			removed = me.removed;
-
-		if (!node.isReplace && Ext.Array.indexOf(removed, node) == -1) {
-			if (!node.isNew()) removed.push(node);
-		}
-
-		if (me.autoSync && !me.autoSyncSuspended && !isMove) {
-			me.sync();
-		}
-	},
 
 	createNew: function(model, config){
 		var parent = this.getCurrModel();
@@ -6916,87 +6381,6 @@ Ext.define('NAT.data.treestore.Client', {
 		this.callParent(arguments);
 		this.Select(null);
 	},
-
-    setRootNode: function(root, /* private */ preventLoad) {
-        var me = this,
-            model = me.model,
-            idProperty = model.prototype.idProperty
-
-        root = root || {};
-        if (!root.isModel) {
-            // create a default rootNode and create internal data struct.
-            Ext.applyIf(root, {
-                id: me.defaultRootId,
-                text: 'Root',
-                allowDrag: false
-            });
-            if (root[idProperty] === undefined) {
-                root[idProperty] = me.defaultRootId;
-            }
-            Ext.data.NodeInterface.decorate(model);
-            root = Ext.ModelManager.create(root, model);
-        } else if (root.isModel && !root.isNode) {
-            Ext.data.NodeInterface.decorate(model);
-        }
-
-        //IZS: to force decoration in setRootNode, appendChild ect:
-        Ext.data.NodeInterface.decorate(root);
-        //IZS end
-
-
-        // Because we have decorated the model with new fields,
-        // we need to build new extactor functions on the reader.
-        me.getProxy().getReader().buildExtractors(true);
-
-        // When we add the root to the tree, it will automaticaly get the NodeInterface
-        me.tree.setRootNode(root);
-
-//IZS begin
-//        if (preventLoad !== true && !root.isLoaded() && (me.autoLoad === true || root.isExpanded())) {
-//            me.load({
-//                node: root
-//            });
-//        }
-
-        root.join(this);
-		this.Select(root, true);
-//IZS end
-
-        return root;
-    },
-
-    filterNew: function(item) {
-        return (item.isNew() && item.isNATValid);
-    },
-    filterNewAll: function(item) {
-        return item.isNew();
-    },
-    filterUpdated: function(item) {
-        return (!item.isNew() && item.isNATDirty && item.isNATValid);
-    },
-    filterUpdatedAll: function(item) {
-        return (!item.isNew() && item.isNATDirty);
-    },
-
-    GetChangedModels: function () {
-        return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
-    },
-    GetChangedModelsAll: function () {
-        return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
-    },
-
-    IsChanged: function () {
-        return (this.GetChangedModelsAll().length != 0);
-    },
-
-    ValidateChangedModels: function(op, callback, scope) {
-        async.forEach(this.GetChangedModelsAll(), function(model, done) {
-            model.ValidateModel(null, done, model);
-        },
-        function(err){
-            Ext.callback(callback, scope, [err, null], 0);
-        });
-    },
 
     //model calls it from callStore
     OnModelDirtyChanged: function (model){
@@ -7016,31 +6400,17 @@ Ext.define('NAT.data.treestore.Persistent', {
         config = config || {};
         Ext.applyIf(config, {
 			model: config.persistentModel,
-			collection: app.GetModelNameWithoutNamespace(config.persistentModel),
             api: {
-                read: app.baseUrl + 'data/read',
-                create: app.baseUrl + 'data/create',
-                update: app.baseUrl + 'data/update',
-                destroy: app.baseUrl + 'data/destroy'
+                read: app.baseUrl + 'persistent/read',
+                create: app.baseUrl + 'persistent/create',
+                update: app.baseUrl + 'persistent/update',
+                destroy: app.baseUrl + 'persistent/destroy'
             },
             mergeClientRecords: false
         });
         this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
         this.callParent([config]);
-    },
-
-    getNewRecords: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterNew);
-    },
-    getUpdatedRecords: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterUpdated);
-    },
-    getNewRecordsAll: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterNewAll);
-    },
-    getUpdatedRecordsAll: function() {
-        return Ext.Array.filter(this.tree.flatten(), this.filterUpdatedAll);
     },
 
     load: function (options, callback, scope) {
@@ -7059,9 +6429,9 @@ Ext.define('NAT.data.treestore.Persistent', {
 
         options.params = options.params || {};
         options.params.lastModified = options.params.lastModified || new Date(0);
-        options.params.collection = options.params.collection || this.collection;
+		options.params.persistentModel = app.GetModelNameWithoutNamespace(this.persistentModel);
 
-        if (!options || !options.params || !options.params.collection){
+		if (!options || !options.params || !options.params.persistentModel){
             Ext.callback(callback, scope, [{ message: 'options not valid' }, null], 0);
             return;
         }
@@ -7422,87 +6792,6 @@ Ext.define('NAT.data.treestore.Persistent', {
 		this.callParent(arguments);
 		this.Select(null);
 	},
-
-    setRootNode: function(root, /* private */ preventLoad) {
-        var me = this,
-            model = me.model,
-            idProperty = model.prototype.idProperty
-
-        root = root || {};
-        if (!root.isModel) {
-            // create a default rootNode and create internal data struct.
-            Ext.applyIf(root, {
-                id: me.defaultRootId,
-                text: 'Root',
-                allowDrag: false
-            });
-            if (root[idProperty] === undefined) {
-                root[idProperty] = me.defaultRootId;
-            }
-            Ext.data.NodeInterface.decorate(model);
-            root = Ext.ModelManager.create(root, model);
-        } else if (root.isModel && !root.isNode) {
-            Ext.data.NodeInterface.decorate(model);
-        }
-
-        //IZS: to force decoration in setRootNode, appendChild ect:
-        Ext.data.NodeInterface.decorate(root);
-        //IZS end
-
-
-        // Because we have decorated the model with new fields,
-        // we need to build new extactor functions on the reader.
-        me.getProxy().getReader().buildExtractors(true);
-
-        // When we add the root to the tree, it will automaticaly get the NodeInterface
-        me.tree.setRootNode(root);
-
-//IZS begin
-//        if (preventLoad !== true && !root.isLoaded() && (me.autoLoad === true || root.isExpanded())) {
-//            me.load({
-//                node: root
-//            });
-//        }
-
-        root.join(this);
-		this.Select(root, true);
-//IZS end
-
-        return root;
-    },
-
-    filterNew: function(item) {
-        return (item.isNew() && item.isNATValid);
-    },
-    filterNewAll: function(item) {
-        return item.isNew();
-    },
-    filterUpdated: function(item) {
-        return (!item.isNew() && item.isNATDirty && item.isNATValid);
-    },
-    filterUpdatedAll: function(item) {
-        return (!item.isNew() && item.isNATDirty);
-    },
-
-    GetChangedModels: function () {
-        return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
-    },
-    GetChangedModelsAll: function () {
-        return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
-    },
-
-    IsChanged: function () {
-        return (this.GetChangedModelsAll().length != 0);
-    },
-
-    ValidateChangedModels: function(op, callback, scope) {
-        async.forEach(this.GetChangedModelsAll(), function(model, done) {
-            model.ValidateModel(null, done, model);
-        },
-        function(err){
-            Ext.callback(callback, scope, [err, null], 0);
-        });
-    },
 
     //model calls it from callStore
     OnModelDirtyChanged: function (model){
