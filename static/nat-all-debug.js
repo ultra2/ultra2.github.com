@@ -4313,16 +4313,6 @@ Ext.define('NAT.tab.Panel', {
 	extend: 'Ext.tab.Panel',
 	alias: 'widget.nattabpanel',
 
-	/**
-	 * My property description.  Like other pieces of your comment blocks,
-	 * this can span multiple lines.
-	 *
-	 * @property stores
-	 * @type {Array}
-	 * @default "[]"
-	 */
-	//stores: [],
-
 	initComponent: function(){
 		//before callParent bc it creates items (like grid) that needs stores created
 		if (!this.designMode){
@@ -4380,11 +4370,11 @@ Ext.define('NAT.tab.Panel', {
 	save: function (op, callback, scope) {
 		var me = this;
 		async.forEach(me.stores.getRange(), function(store, done){
-				store.save(null, done, me);
-			},
-			function(data, err){
-				Ext.callback(callback, scope, [err, null], 0);
-			})
+			store.save(null, done, me);
+		},
+		function(data, err){
+			Ext.callback(callback, scope, [err, null], 0);
+		})
 	}
 });
 
@@ -4536,22 +4526,22 @@ Ext.define('NAT.window.Window', {
 	load: function(op, callback, scope) {
 		var me = this;
 		async.forEach(me.stores.getRange(), function(store, done){
-				store.load(null, done, me);
-			},
-			function(data, err){
-				me.RefreshUI();
-				Ext.callback(callback, scope, [err, null], 0);
-			})
+			store.load(null, done, me);
+		},
+		function(data, err){
+			me.RefreshUI();
+			Ext.callback(callback, scope, [err, null], 0);
+		})
 	},
 
 	reload: function(op, callback, scope) {
 		var me = this;
 		async.forEach(me.stores.getRange(), function(store, done){
-				store.reload(null, done, me);
-			},
-			function(data, err){
-				Ext.callback(callback, scope, [err, null], 0);
-			})
+			store.reload(null, done, me);
+		},
+		function(data, err){
+			Ext.callback(callback, scope, [err, null], 0);
+		})
 	},
 
 	reject: function(){
@@ -4563,11 +4553,11 @@ Ext.define('NAT.window.Window', {
 	save: function (op, callback, scope) {
 		var me = this;
 		async.forEach(me.stores.getRange(), function(store, done){
-				store.save(null, done, me);
-			},
-			function(data, err){
-				Ext.callback(callback, scope, [err, null], 0);
-			})
+			store.save(null, done, me);
+		},
+		function(data, err){
+			Ext.callback(callback, scope, [err, null], 0);
+		})
 	},
 
 	showModal: function (op, callback, scope) {
