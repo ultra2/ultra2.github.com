@@ -160,7 +160,7 @@ Ext.define('NAT.tree.Panel', {
 
 		if (Ext.isString(this.dataStore)){
 			//local store?
-			var natpanel = this.up('natpanel');
+			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
 			if (natpanel){
 				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
 			}
@@ -227,7 +227,7 @@ Ext.define('NAT.tree.Panel', {
 
     tree_deselect: function (rowModel, model) {
         if (!this.store) return;
-        this.store.Deselect();
+		this.store.Select(null);
     },
 
     getSelected: function () {
@@ -1355,7 +1355,7 @@ Ext.define('NAT.form.field.Lookup', {
 
 		if (Ext.isString(this.dataStore)){
 			//local store?
-			var natpanel = this.up('natpanel');
+			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
 			if (natpanel){
 				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
 			}
@@ -1874,7 +1874,7 @@ Ext.define('NAT.form.Panel', {
 
 		if (Ext.isString(this.dataStore)){
 			//local store?
-			var natpanel = this.up('natpanel');
+			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
 			if (natpanel){
 				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
 			}
@@ -2258,7 +2258,7 @@ Ext.define('NAT.grid.Panel', {
 
 		if (Ext.isString(this.dataStore)){
 			//local store?
-			var natpanel = this.up('natpanel');
+			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
 			if (natpanel){
 				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
 			}
@@ -2289,7 +2289,7 @@ Ext.define('NAT.grid.Panel', {
 
     this_deselect: function (rowModel, model) {
         if (!this.store) return;
-        this.store.Deselect();
+        this.store.Select(null);
     },
 
 //    luColumn_bindstore: function(column, store) {
@@ -2477,7 +2477,7 @@ Ext.define('natjs.overrides.data.HasManyAssociation', {
                     });
 
                     //me[storeName] = Ext.create('Ext.data.Store', config);
-                    me[storeName] = Ext.create('widget.natstore', config); //NAT Support!!!
+                    me[storeName] = Ext.create('widget.natcomponentstore', config); //NAT Support!!!
                     if (autoLoad) {
                         me[storeName].load();
                     }
@@ -4243,7 +4243,6 @@ Ext.define('NAT.panel.Panel', {
         if (!this.designMode){
             this.initStores();
         }
-
         this.callParent(arguments);
     },
 
@@ -4261,6 +4260,10 @@ Ext.define('NAT.panel.Panel', {
             me.stores.add(store.itemId, store);
         }
     },
+
+	getStore: function(itemId){
+		return this.stores.getByKey(itemId);
+	},
 
 	load: function(op, callback, scope) {
 		var me = this;
@@ -4297,6 +4300,91 @@ Ext.define('NAT.panel.Panel', {
 		function(data, err){
 			Ext.callback(callback, scope, [err, null], 0);
 		})
+	}
+});
+
+/**
+ * This is the description for my class.
+ *
+ * @class NAT.panel.Panel
+ * @constructor
+ */
+Ext.define('NAT.tab.Panel', {
+	extend: 'Ext.tab.Panel',
+	alias: 'widget.nattabpanel',
+
+	/**
+	 * My property description.  Like other pieces of your comment blocks,
+	 * this can span multiple lines.
+	 *
+	 * @property stores
+	 * @type {Array}
+	 * @default "[]"
+	 */
+	//stores: [],
+
+	initComponent: function(){
+		//before callParent bc it creates items (like grid) that needs stores created
+		if (!this.designMode){
+			this.initStores();
+		}
+		this.callParent(arguments);
+	},
+
+	initStores : function() {
+		var me = this,
+			stores = me.stores || [];
+
+		me.stores = new Ext.util.AbstractMixedCollection();
+
+		for (var i=0; stores.length>i; i++){
+			var store = stores[i];
+			var xtype = store.xtype;
+			delete store.xtype;
+			store = Ext.create('widget.' + xtype, store);
+			me.stores.add(store.itemId, store);
+		}
+	},
+
+	getStore: function(itemId){
+		return this.stores.getByKey(itemId);
+	},
+
+	load: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.load(null, done, me);
+			},
+			function(data, err){
+				me.RefreshUI();
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reload: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.reload(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reject: function(){
+		this.stores.each(function(store){
+			store.reject();
+		}, this)
+	},
+
+	save: function (op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.save(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
 	}
 });
 
@@ -4345,7 +4433,7 @@ Ext.define('NAT.toolbar.Command', {
 
         if (Ext.isString(this.dataStore)){
             //local store?
-            var natpanel = this.up('natpanel');
+			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
             if (natpanel){
                 this.dataStore = natpanel.stores.getByKey(this.dataStore);
             }
@@ -4499,7 +4587,7 @@ Ext.define('NAT.view.MessageDialog', {
         this.down('#btnCancel').on('click', this.btn_click, this);
     },
 
-    ShowModal: function (config, callback, scope) {
+    showModal: function (config, callback, scope) {
         this.callback = callback;
         this.scope = scope;
 
@@ -4573,38 +4661,98 @@ Ext.define('NAT.window.Window', {
     extend: 'Ext.window.Window',
     alias: 'widget.natwindow',
 
-    isActivated: false,
+	shown: false,
+	//stores: [],
+
+	op: null,
+	callback: null,
+	scope: null,
+	result: null,
 
     initComponent: function () {
-        this.callParent(arguments);
+		//before callParent bc it creates items (like grid) that needs stores created
+		if (!this.designMode){
+			this.initStores();
+		}
+		this.callParent(arguments);
 
         this.on('activate', this.this_activate, this);
-
-        //this.InitEditorsBinding();
-        //        this.InitFieldsBinding();
-    },
+		this.on('close', this.this_close, this);
+	},
 
     this_activate: function(){
-        if (this.isActivated) return;
-        this.fireEvent('shown');
-        this.isActivated = true;
+        if (this.shown) return;
+		this.FocusFirstField();
+		this.fireEvent('shown');
+        this.shown = true;
     },
 
-//    InitEditorsBinding: function() {
-//        var editors = this.query('form');
-//        for (var i = 0; i < editors.length; i++) {
-//            var editor = editors[i];
-//            editor.InitBinding();
-//        }
-//    },
-    //
-    //    InitFieldsBinding: function() {
-    //        var fields = this.query('[isFormField]');
-    //        for (var i = 0; i < fields.length; i++) {
-    //            var field = fields[i];
-    //            field.InitBinding();
-    //        }
-    //    },
+	this_close: function() {
+		Ext.callback(this.callback, this.scope, [null, this.result], 0);
+	},
+
+	initStores : function() {
+		var me = this,
+			stores = me.stores || [];
+
+		me.stores = new Ext.util.AbstractMixedCollection();
+
+		for (var i=0; stores.length>i; i++){
+			var store = stores[i];
+			var xtype = store.xtype;
+			delete store.xtype;
+			store = Ext.create('widget.' + xtype, store);
+			me.stores.add(store.itemId, store);
+		}
+	},
+
+	getStore: function(itemId){
+		return this.stores.getByKey(itemId);
+	},
+
+	load: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.load(null, done, me);
+			},
+			function(data, err){
+				me.RefreshUI();
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reload: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.reload(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reject: function(){
+		this.stores.each(function(store){
+			store.reject();
+		}, this)
+	},
+
+	save: function (op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.save(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	showModal: function (op, callback, scope) {
+		this.op = op || {};
+		this.scope = scope;
+		this.callback = callback;
+		this.show();
+	},
 
     FocusFirstField: function() {
         var fields = this.query('[isFormField]');
@@ -4623,18 +4771,6 @@ Ext.define('NAT.window.Window', {
                 return;
             }
         }
-    },
-
-    Refresh: function(op, callback, scope) {
-        Ext.callback(callback, scope, [null, null], 0);
-    },
-
-    RebindUI: function () {
-        this.InitEditorsBinding();
-        //        this.InitFieldsBinding();
-    },
-
-    RefreshUI: function () {
     }
 });
 
@@ -5159,7 +5295,7 @@ Ext.define('NAT.data.proxy.Ajax', {
             method   : options.method || 'POST',
             timeout  : this.timeout,
             params   : options.params,
-            jsonData : this.Serialize(options.jsonData),
+            jsonData : this.getWriter().getRecordData(options.jsonData),
             scope    : this,
             callback : this.NATCreateRequestCallback(options, callback, scope),
             preventLoadingMask: options.preventLoadingMask
@@ -5172,44 +5308,6 @@ Ext.define('NAT.data.proxy.Ajax', {
         Ext.Ajax.request(request);
 
         return request;
-    },
-
-    Serialize: function(value) {
-        if (typeof value === 'undefined') return '';
-        if (value.isModel) return this.SerializeModel(value);
-        if (Ext.isArray(value)) return this.SerializeArray(value);
-        if (Ext.isObject(value)) return this.SerializeObject(value);
-        if (Ext.isBoolean(value)) return value;
-        return this.SerializePrimitive(value);
-    },
-
-    SerializeObject: function(object) {
-        for(var property in object) {
-            if (!object.hasOwnProperty(property)) continue;
-            var value = object[property];
-            object[property] = this.Serialize(value);
-        }
-        return JSON.stringify(object);
-    },
-    SerializeModel: function(model) {
-        return this.getWriter().getRecordData(model);
-    },
-
-    SerializePrimitive: function(value) {
-        if(typeof value.toJSON == 'function') {
-            return value.toJSON();
-        } else {
-            return value.toString();
-        }
-    },
-
-    SerializeArray: function(array) {
-        var result = [];
-        Ext.Array.every(array, function(value) {
-            result.push(this.Serialize(value));
-            return true;
-        }, this);
-        return result;
     },
 
     NATCreateRequestCallback: function(options, callback, scope) {
@@ -5300,407 +5398,22 @@ Ext.define('NAT.data.proxy.Ajax', {
         }
 
         var dlg = Ext.create('NAT.view.MessageDialog');
-        dlg.ShowModal({
+        dlg.showModal({
             type: type,
             msg: msg
         });
     }
 });
 
-Ext.define('NAT.data.Store', {
+Ext.define('NAT.data.store.Abstract', {
     extend: 'Ext.data.Store',
-    alias: 'widget.natstore',
 
-    requires: ['NAT.data.proxy.Ajax'],
-
-    collection: null,
     currModel: null,
-    saving: false,
 
     constructor: function (config) {
         config = config || {};
-        Ext.applyIf(config, {
-            model: 'NAT.data.Model',
-            api: {
-                read: app.baseUrl + 'data/read',
-                create: app.baseUrl + 'data/create',
-                update: app.baseUrl + 'data/update',
-                destroy: app.baseUrl + 'data/destroy'
-            },
-            mergeClientRecords: false
-        });
-        this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
-
         this.callParent([config]);
-
         this.on('datachanged', this.updateCurrModel, this);
-    },
-
-    getNewRecords: function() {
-        return this.data.filterBy(this.filterNew).items;
-    },
-    getUpdatedRecords: function() {
-        return this.data.filterBy(this.filterUpdated).items;
-    },
-    getNewRecordsAll: function() {
-        return this.data.filterBy(this.filterNewAll).items;
-    },
-    getUpdatedRecordsAll: function() {
-        return this.data.filterBy(this.filterUpdatedAll).items;
-    },
-
-    load: function (options, callback, scope) {
-        var me = this;
-
-        if (me.loading) {
-            Ext.callback(callback, scope, [null, null], 0);
-            return;
-        }
-
-        options = Ext.applyIf({
-            callback: callback,
-            scope: scope,
-            addRecords: 'merge'
-        }, options);
-
-        options.params = options.params || {};
-        options.params.lastModified = options.params.lastModified || new Date(0);
-        options.params.collection = options.params.collection || this.collection;
-
-        if (!options || !options.params || !options.params.collection){
-			var message = 'store options not valid, storeId: ' + this.storeId;
-			console.log(message);
-            Ext.callback(callback, scope, [{ message: message }, null], 0);
-            return;
-        }
-
-        return me.callParent([options]);
-    },
-
-    reload: function(options, callback, scope) {
-        return this.load(Ext.apply(this.lastOptions, options), callback, scope);
-    },
-
-    onProxyLoad: function(operation) {
-        var me = this,
-            resultSet = operation.getResultSet(),
-            records = operation.getRecords(),
-            successful = operation.wasSuccessful();
-
-        if (resultSet) {
-            me.totalCount = resultSet.total;
-        }
-
-        if (successful) {
-            me.loadRecords(records, operation);
-        }
-
-        me.loading = false;
-        if (me.hasListeners.load) {
-            me.fireEvent('load', me, records, successful);
-        }
-
-        //TODO: deprecate this event, it should always have been 'load' instead. 'load' is now documented, 'read' is not.
-        //People are definitely using this so can't deprecate safely until 2.x
-        if (me.hasListeners.read) {
-            me.fireEvent('read', me, records, successful);
-        }
-
-//IZS make callback result data compatible with async library
-//        Ext.callback(operation.callback, operation.scope || me, [records, operation, successful]);
-        Ext.callback(operation.callback, operation.scope || me, [null, {records: records, operation: operation, successful: successful}]);
-    },
-
-    loadRecords: function(records, options) {
-        var me     = this,
-            i      = 0,
-            length = records.length,
-            start,
-            addRecords,
-            snapshot = me.snapshot;
-
-        if (options) {
-            start = options.start;
-            addRecords = options.addRecords;
-        }
-
-        //IZS merge support lastModified
-        if (addRecords === false) {
-            delete me.snapshot;
-            me.clearData(true);
-            me.data.addAll(records);
-        }
-        else if (addRecords === true) {
-            if (snapshot) {
-                snapshot.addAll(records);
-            }
-            me.data.addAll(records);
-        }
-        else if (addRecords === 'merge'){
-            me.MergeModels(records);
-            for (i=0; i < records.length; i++) {
-                var model = records[i];
-                var _modified = model.get('_modified');
-                if (_modified > this.lastOptions.params.lastModified) {
-                    this.lastOptions.params.lastModified = _modified;
-                }
-            }
-        }
-
-        if (start !== undefined) {
-            for (i=0; i < length; i++) {
-                records[i].index = start + i;
-                records[i].join(me);
-            }
-        } else {
-            for (i=0; i < length; i++) {
-                records[i].join(me);
-            }
-        }
-
-        /*
-         * this rather inelegant suspension and resumption of events is required because both the filter and sort functions
-         * fire an additional datachanged event, which is not wanted. Ideally we would do this a different way. The first
-         * datachanged event is fired by the call to this.add, above.
-         */
-        me.suspendEvents();
-
-        if (me.filterOnLoad && !me.remoteFilter) {
-            me.filter();
-        }
-
-        if (me.sortOnLoad && !me.remoteSort) {
-            me.sort(undefined, undefined, undefined, true);
-        }
-
-        me.resumeEvents();
-        me.fireEvent('datachanged', me);
-        me.fireEvent('refresh', me);
-    },
-
-    save: function (op, callback, scope) {
-        if (this.saving) {
-            Ext.callback(callback, scope, [null, null], 0);
-            return;
-        }
-
-        this.saving = true;
-
-        var me = this;
-        async.waterfall([
-            function(cb){
-                me.ValidateChangedModels(null, cb, me);
-            },
-            function(result, cb){
-                var options = {
-                    scope: me,
-                    success: function(batch, options) {
-                        cb(null, options);
-                    },
-                    failure: function(batch, options) {
-                        cb('failure', options);
-                    }
-                };
-
-                me.sync(options);
-
-                if (!options.operations){
-                    cb(null, options);
-                    return;
-                }
-
-                if ((options.operations) && (!options.preventLoadingMask)) {
-                    app.ShowLoadingMask();
-                }
-            }
-        ],
-        function(err, options) {
-            me.saving = false;
-
-            if (err) {
-                alert("validation error, field: " + err.getAt(0).field);
-            }
-
-            options = options || {};
-            if ((options.operations) && (!options.preventLoadingMask)) {
-                app.HideLoadingMask();
-            }
-
-            Ext.callback(callback, scope, [null, options], 0);
-        });
-    },
-
-    //overridden!!! (Server sends the modified models back here)
-    onCreateRecords: function(records, operation, success) {
-        if (!success) return;
-
-        var sentRecords = operation.resultSet.records;
-
-        for (var i= 0; i < sentRecords.length; ++i) {
-            var record = sentRecords[i];
-            var original = operation.records[i];
-            if (original) {
-                original.setId(record.getId());
-            }
-        }
-    },
-
-    //overridden!!! (Server sends the modified models back here)
-    onUpdateRecords: function (records, operation, success) {
-    },
-
-    onDestroyRecords: function(records, operation, success){
-        if (success) {
-            this.removed = [];
-        }
-    },
-
-    Merge: function(source) {
-        /*remove models that are not exist in source*/
-        var removed = [],
-            count = this.getCount();
-        for (var i = 0; i < count; i++) {
-            var model = this.getAt(i);
-            if (!source.getById(model.getId())) removed.push(model);
-        }
-        for (var j = 0; j < removed.length; j++) {
-            this.remove(removed[j]);
-        }
-
-        this.MergeModels(source.getRange(0));
-    },
-
-    reject: function (silent) {
-        var removedModels = this.getRemovedRecords();
-        for (i = 0; i < removedModels.length; i++) {
-            model = removedModels[i];
-            this.add(model);
-        }
-
-        var updatedModels = this.getUpdatedRecordsAll();
-        for (var i = 0; i < updatedModels.length; i++) {
-            var model = updatedModels[i];
-            model.reject(silent);
-        }
-
-        var newModels = this.getNewRecordsAll();
-        for (i = 0; i < newModels.length; i++) {
-            model = newModels[i];
-            this.remove(model);
-        }
-
-        this.commit();
-    },
-
-    commit: function (silent) {
-        this.removed = [];
-
-        var changedModels = this.GetChangedModelsAll();
-        var count = changedModels.length;
-
-        for (var i = 0; i < count; i++) {
-            var model = changedModels[i];
-            model.commit(silent);
-        }
-    },
-
-    MergeModels: function (models) {
-        for (var i = 0; i < models.length; i++) {
-            this.MergeModel(models[i]);
-        }
-    },
-
-    MergeModel: function (model) {
-        var _deleted = model.get('_deleted');
-        var original = this.getById(model.getId());
-        if (_deleted) { //removed node
-            if (original) {
-                this.deleteRecord(original);
-            }
-            return true;
-        }
-
-        if (!original) {  //new node
-            this.add(model);
-            return true;
-        }
-
-        //updated node
-        original.beginEdit();
-        original.Merge(model);
-        original.endEdit(true);
-        original.commit();
-        return true;
-    },
-
-    //nat method: original remove method put the record in the removed array and sync
-    //this method is used in timestamp refreshing
-    deleteRecord: function(record) {
-        var index = this.data.indexOf(record);
-        if (this.snapshot) {
-            this.snapshot.remove(record);
-        }
-        record.unjoin(this);
-        this.data.remove(record);
-        this.remove(record);
-        this.fireEvent('remove', this, record, index);
-        this.fireEvent('datachanged', this);
-    },
-
-	createNew: function(model, config){
-		model = app.natCreateModel(model || this.model, config);
-        this.add(model);
-        this.Select(model);
-		return model;
-    },
-
-    removeCurrent: function(){
-        if (!this.currModel) return;
-        this.remove(this.currModel);
-        this.updateCurrModel();
-    },
-
-    removeAll: function(silent) {
-        this.callParent(arguments);
-        this.Select(null);
-    },
-
-    updateCurrModel: function() {
-        if (this.currModel) return;
-        this.Select(this.getAt(0));
-    },
-
-    filterNew: function(item) {
-        return (item.isNew() && item.isNATValid);
-    },
-    filterNewAll: function(item) {
-        return item.isNew();
-    },
-    filterUpdated: function(item) {
-        return (!item.isNew() && item.isNATDirty && item.isNATValid);
-    },
-    filterUpdatedAll: function(item) {
-        return (!item.isNew() && item.isNATDirty);
-    },
-
-    GetChangedModels: function () {
-        return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
-    },
-    GetChangedModelsAll: function () {
-        return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
-    },
-
-    IsChanged: function () {
-        return (this.GetChangedModelsAll().length != 0);
-    },
-
-    ValidateChangedModels: function(op, callback, scope) {
-        async.forEach(this.GetChangedModelsAll(), function(model, done) {
-            model.ValidateModel(null, done, model);
-        },
-        function(err){
-            Ext.callback(callback, scope, [err, null], 0);
-        });
     },
 
     Select: function (model, suppressEvent) {
@@ -5717,15 +5430,1037 @@ Ext.define('NAT.data.Store', {
         }
     },
 
-    Deselect: function (suppressEvent) {
-        if (this.loading) return;
-        if (this.currModel == null) return;
+    hasModel: function() {
+        return ((this.currModel) && (typeof this.currModel == 'object'));
+    },
 
-        if (!suppressEvent) {
-            this.OnDeselect(this.currModel);
+	getCurrModel: function() {
+		if (this.hasModel()){
+			return this.currModel;
+		}
+
+		this.updateCurrModel();
+
+		if (this.hasModel()){
+			return this.currModel;
+		}
+		return null;
+	},
+
+	updateCurrModel: function() {
+		if (this.currModel) return;
+		this.Select(this.getAt(0));
+	},
+
+    OnSelect: function(oldModel, newModel) {
+        this.fireEvent('select', oldModel, newModel);
+    },
+
+    OnCurrentModelChanged: function () {
+        this.fireEvent('currentmodelchanged', this.currModel);
+    }
+});
+
+Ext.define('NAT.data.store.Client', {
+	extend: 'NAT.data.store.Abstract',
+	alias: 'widget.natclientstore',
+
+	requires: ['NAT.data.proxy.Ajax'],
+
+	constructor: function (config) {
+		config = config || {};
+		Ext.applyIf(config, {
+			model: config.componentModel,
+			collection: app.GetModelNameWithoutNamespace(config.componentModel)
+		});
+		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
+
+		this.callParent([config]);
+	},
+
+	createNew: function(model, config){
+		model = app.natCreateModel(model || this.model, config);
+		this.add(model);
+		this.Select(model);
+		return model;
+	},
+
+	removeCurrent: function(){
+		if (!this.currModel) return;
+		this.remove(this.currModel);
+		this.updateCurrModel();
+	},
+
+	removeAll: function(silent) {
+		this.callParent(arguments);
+		this.Select(null);
+	},
+
+	//model calls it from callStore
+	OnModelDirtyChanged: function (model){
+		this.fireEvent('modeldirtychanged', model);
+	}
+});
+
+Ext.define('NAT.data.store.Component', {
+	extend: 'NAT.data.store.Abstract',
+	alias: 'widget.natcomponentstore',
+
+	requires: ['NAT.data.proxy.Ajax'],
+
+	constructor: function (config) {
+		config = config || {};
+		Ext.applyIf(config, {
+			model: config.componentModel,
+			collection: app.GetModelNameWithoutNamespace(config.componentModel)
+		});
+		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
+
+		this.callParent([config]);
+	},
+
+	createNew: function(model, config){
+		model = app.natCreateModel(model || this.model, config);
+		this.add(model);
+		this.Select(model);
+		return model;
+	},
+
+	removeCurrent: function(){
+		if (!this.currModel) return;
+		this.remove(this.currModel);
+		this.updateCurrModel();
+	},
+
+	removeAll: function(silent) {
+		this.callParent(arguments);
+		this.Select(null);
+	},
+
+	//model calls it from callStore
+	OnModelDirtyChanged: function (model){
+		this.fireEvent('modeldirtychanged', model);
+	}
+});
+
+Ext.define('NAT.data.store.Lookup', {
+	extend: 'NAT.data.store.Abstract',
+	alias: 'widget.natlookupstore',
+
+	requires: ['NAT.data.proxy.Ajax'],
+
+	constructor: function (config) {
+		config = config || {};
+		Ext.applyIf(config, {
+			model: config.queryModel,
+			collection: app.GetModelNameWithoutNamespace(config.queryModel),
+			api: {
+				read: app.baseUrl + 'data/read',
+				create: app.baseUrl + 'data/create',
+				update: app.baseUrl + 'data/update',
+				destroy: app.baseUrl + 'data/destroy'
+			},
+			mergeClientRecords: false
+		});
+		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
+
+		this.callParent([config]);
+	},
+
+	load: function (options, callback, scope) {
+		var me = this;
+
+		if (me.loading) {
+			Ext.callback(callback, scope, [null, null], 0);
+			return;
+		}
+
+		options = Ext.applyIf({
+			callback: callback,
+			scope: scope,
+			addRecords: 'merge'
+		}, options);
+
+		options.params = options.params || {};
+		options.params.lastModified = options.params.lastModified || new Date(0);
+		options.params.collection = options.params.collection || this.collection;
+
+		if (!options || !options.params || !options.params.collection){
+			Ext.callback(callback, scope, [{ message: message }, null], 0);
+			return;
+		}
+
+		return me.callParent([options]);
+	},
+
+	reload: function(options, callback, scope) {
+		return this.load(Ext.apply(this.lastOptions, options), callback, scope);
+	},
+
+	onProxyLoad: function(operation) {
+		var me = this,
+			resultSet = operation.getResultSet(),
+			records = operation.getRecords(),
+			successful = operation.wasSuccessful();
+
+		if (resultSet) {
+			me.totalCount = resultSet.total;
+		}
+
+		if (successful) {
+			me.loadRecords(records, operation);
+		}
+
+		me.loading = false;
+		if (me.hasListeners.load) {
+			me.fireEvent('load', me, records, successful);
+		}
+
+		//TODO: deprecate this event, it should always have been 'load' instead. 'load' is now documented, 'read' is not.
+		//People are definitely using this so can't deprecate safely until 2.x
+		if (me.hasListeners.read) {
+			me.fireEvent('read', me, records, successful);
+		}
+
+//IZS make callback result data compatible with async library
+//        Ext.callback(operation.callback, operation.scope || me, [records, operation, successful]);
+		Ext.callback(operation.callback, operation.scope || me, [null, {records: records, operation: operation, successful: successful}]);
+	},
+
+	loadRecords: function(records, options) {
+		var me     = this,
+			i      = 0,
+			length = records.length,
+			start,
+			addRecords,
+			snapshot = me.snapshot;
+
+		if (options) {
+			start = options.start;
+			addRecords = options.addRecords;
+		}
+
+		//IZS merge support lastModified
+		if (addRecords === false) {
+			delete me.snapshot;
+			me.clearData(true);
+			me.data.addAll(records);
+		}
+		else if (addRecords === true) {
+			if (snapshot) {
+				snapshot.addAll(records);
+			}
+			me.data.addAll(records);
+		}
+		else if (addRecords === 'merge'){
+			me.MergeModels(records);
+			for (i=0; i < records.length; i++) {
+				var model = records[i];
+				var _modified = model.get('_modified');
+				if (_modified > this.lastOptions.params.lastModified) {
+					this.lastOptions.params.lastModified = _modified;
+				}
+			}
+		}
+
+		if (start !== undefined) {
+			for (i=0; i < length; i++) {
+				records[i].index = start + i;
+				records[i].join(me);
+			}
+		} else {
+			for (i=0; i < length; i++) {
+				records[i].join(me);
+			}
+		}
+
+		/*
+		 * this rather inelegant suspension and resumption of events is required because both the filter and sort functions
+		 * fire an additional datachanged event, which is not wanted. Ideally we would do this a different way. The first
+		 * datachanged event is fired by the call to this.add, above.
+		 */
+		me.suspendEvents();
+
+		if (me.filterOnLoad && !me.remoteFilter) {
+			me.filter();
+		}
+
+		if (me.sortOnLoad && !me.remoteSort) {
+			me.sort(undefined, undefined, undefined, true);
+		}
+
+		me.resumeEvents();
+		me.fireEvent('datachanged', me);
+		me.fireEvent('refresh', me);
+	},
+
+	Merge: function(source) {
+		/*remove models that are not exist in source*/
+		var removed = [],
+			count = this.getCount();
+		for (var i = 0; i < count; i++) {
+			var model = this.getAt(i);
+			if (!source.getById(model.getId())) removed.push(model);
+		}
+		for (var j = 0; j < removed.length; j++) {
+			this.remove(removed[j]);
+		}
+
+		this.MergeModels(source.getRange(0));
+	},
+
+	MergeModels: function (models) {
+		for (var i = 0; i < models.length; i++) {
+			this.MergeModel(models[i]);
+		}
+	},
+
+	MergeModel: function (model) {
+		var _deleted = model.get('_deleted');
+		var original = this.getById(model.getId());
+		if (_deleted) { //removed node
+			if (original) {
+				this.deleteRecord(original);
+			}
+			return true;
+		}
+
+		if (!original) {  //new node
+			this.add(model);
+			return true;
+		}
+
+		//updated node
+		original.beginEdit();
+		original.Merge(model);
+		original.endEdit(true);
+		original.commit();
+		return true;
+	},
+
+	//nat method: original remove method put the record in the removed array and sync
+	//this method is used in timestamp refreshing
+	deleteRecord: function(record) {
+		var index = this.data.indexOf(record);
+		if (this.snapshot) {
+			this.snapshot.remove(record);
+		}
+		record.unjoin(this);
+		this.data.remove(record);
+		this.remove(record);
+		this.fireEvent('remove', this, record, index);
+		this.fireEvent('datachanged', this);
+	}
+});
+
+Ext.define('NAT.data.store.Persistent', {
+	extend: 'NAT.data.store.Abstract',
+	alias: 'widget.natpersistentstore',
+
+	requires: ['NAT.data.proxy.Ajax'],
+
+	saving: false,
+
+	constructor: function (config) {
+		config = config || {};
+		Ext.applyIf(config, {
+			model: config.persistentModel,
+			collection: app.GetModelNameWithoutNamespace(config.persistentModel),
+			api: {
+				read: app.baseUrl + 'data/read',
+				create: app.baseUrl + 'data/create',
+				update: app.baseUrl + 'data/update',
+				destroy: app.baseUrl + 'data/destroy'
+			},
+			mergeClientRecords: false
+		});
+		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
+
+		this.callParent([config]);
+	},
+
+	getNewRecords: function() {
+		return this.data.filterBy(this.filterNew).items;
+	},
+	getUpdatedRecords: function() {
+		return this.data.filterBy(this.filterUpdated).items;
+	},
+	getNewRecordsAll: function() {
+		return this.data.filterBy(this.filterNewAll).items;
+	},
+	getUpdatedRecordsAll: function() {
+		return this.data.filterBy(this.filterUpdatedAll).items;
+	},
+
+	load: function (options, callback, scope) {
+		var me = this;
+
+		if (me.loading) {
+			Ext.callback(callback, scope, [null, null], 0);
+			return;
+		}
+
+		options = Ext.applyIf({
+			callback: callback,
+			scope: scope,
+			addRecords: 'merge'
+		}, options);
+
+		options.params = options.params || {};
+		options.params.lastModified = options.params.lastModified || new Date(0);
+		options.params.collection = options.params.collection || this.collection;
+
+		if (!options || !options.params || !options.params.collection){
+			Ext.callback(callback, scope, [{ message: message }, null], 0);
+			return;
+		}
+
+		return me.callParent([options]);
+	},
+
+	reload: function(options, callback, scope) {
+		return this.load(Ext.apply(this.lastOptions, options), callback, scope);
+	},
+
+	onProxyLoad: function(operation) {
+		var me = this,
+			resultSet = operation.getResultSet(),
+			records = operation.getRecords(),
+			successful = operation.wasSuccessful();
+
+		if (resultSet) {
+			me.totalCount = resultSet.total;
+		}
+
+		if (successful) {
+			me.loadRecords(records, operation);
+		}
+
+		me.loading = false;
+		if (me.hasListeners.load) {
+			me.fireEvent('load', me, records, successful);
+		}
+
+		//TODO: deprecate this event, it should always have been 'load' instead. 'load' is now documented, 'read' is not.
+		//People are definitely using this so can't deprecate safely until 2.x
+		if (me.hasListeners.read) {
+			me.fireEvent('read', me, records, successful);
+		}
+
+//IZS make callback result data compatible with async library
+//        Ext.callback(operation.callback, operation.scope || me, [records, operation, successful]);
+		Ext.callback(operation.callback, operation.scope || me, [null, {records: records, operation: operation, successful: successful}]);
+	},
+
+	loadRecords: function(records, options) {
+		var me     = this,
+			i      = 0,
+			length = records.length,
+			start,
+			addRecords,
+			snapshot = me.snapshot;
+
+		if (options) {
+			start = options.start;
+			addRecords = options.addRecords;
+		}
+
+		//IZS merge support lastModified
+		if (addRecords === false) {
+			delete me.snapshot;
+			me.clearData(true);
+			me.data.addAll(records);
+		}
+		else if (addRecords === true) {
+			if (snapshot) {
+				snapshot.addAll(records);
+			}
+			me.data.addAll(records);
+		}
+		else if (addRecords === 'merge'){
+			me.MergeModels(records);
+			for (i=0; i < records.length; i++) {
+				var model = records[i];
+				var _modified = model.get('_modified');
+				if (_modified > this.lastOptions.params.lastModified) {
+					this.lastOptions.params.lastModified = _modified;
+				}
+			}
+		}
+
+		if (start !== undefined) {
+			for (i=0; i < length; i++) {
+				records[i].index = start + i;
+				records[i].join(me);
+			}
+		} else {
+			for (i=0; i < length; i++) {
+				records[i].join(me);
+			}
+		}
+
+		/*
+		 * this rather inelegant suspension and resumption of events is required because both the filter and sort functions
+		 * fire an additional datachanged event, which is not wanted. Ideally we would do this a different way. The first
+		 * datachanged event is fired by the call to this.add, above.
+		 */
+		me.suspendEvents();
+
+		if (me.filterOnLoad && !me.remoteFilter) {
+			me.filter();
+		}
+
+		if (me.sortOnLoad && !me.remoteSort) {
+			me.sort(undefined, undefined, undefined, true);
+		}
+
+		me.resumeEvents();
+		me.fireEvent('datachanged', me);
+		me.fireEvent('refresh', me);
+	},
+
+	save: function (op, callback, scope) {
+		if (this.saving) {
+			Ext.callback(callback, scope, [null, null], 0);
+			return;
+		}
+
+		this.saving = true;
+
+		var me = this;
+		async.waterfall([
+			function(cb){
+				me.ValidateChangedModels(null, cb, me);
+			},
+			function(result, cb){
+				var options = {
+					scope: me,
+					success: function(batch, options) {
+						cb(null, options);
+					},
+					failure: function(batch, options) {
+						cb('failure', options);
+					}
+				};
+
+				me.sync(options);
+
+				if (!options.operations){
+					cb(null, options);
+					return;
+				}
+
+				if ((options.operations) && (!options.preventLoadingMask)) {
+					app.ShowLoadingMask();
+				}
+			}
+		],
+		function(err, options) {
+			me.saving = false;
+
+			if (err) {
+				alert("validation error, field: " + err.getAt(0).field);
+			}
+
+			options = options || {};
+			if ((options.operations) && (!options.preventLoadingMask)) {
+				app.HideLoadingMask();
+			}
+
+			Ext.callback(callback, scope, [null, options], 0);
+		});
+	},
+
+	//overridden!!! (Server sends the modified models back here)
+	onCreateRecords: function(records, operation, success) {
+		if (!success) return;
+
+		var sentRecords = operation.resultSet.records;
+
+		for (var i= 0; i < sentRecords.length; ++i) {
+			var record = sentRecords[i];
+			var original = operation.records[i];
+			if (original) {
+				original.setId(record.getId());
+			}
+		}
+	},
+
+	//overridden!!! (Server sends the modified models back here)
+	onUpdateRecords: function (records, operation, success) {
+	},
+
+	onDestroyRecords: function(records, operation, success){
+		if (success) {
+			this.removed = [];
+		}
+	},
+
+	Merge: function(source) {
+		/*remove models that are not exist in source*/
+		var removed = [],
+			count = this.getCount();
+		for (var i = 0; i < count; i++) {
+			var model = this.getAt(i);
+			if (!source.getById(model.getId())) removed.push(model);
+		}
+		for (var j = 0; j < removed.length; j++) {
+			this.remove(removed[j]);
+		}
+
+		this.MergeModels(source.getRange(0));
+	},
+
+	reject: function (silent) {
+		var removedModels = this.getRemovedRecords();
+		for (i = 0; i < removedModels.length; i++) {
+			model = removedModels[i];
+			this.add(model);
+		}
+
+		var updatedModels = this.getUpdatedRecordsAll();
+		for (var i = 0; i < updatedModels.length; i++) {
+			var model = updatedModels[i];
+			model.reject(silent);
+		}
+
+		var newModels = this.getNewRecordsAll();
+		for (i = 0; i < newModels.length; i++) {
+			model = newModels[i];
+			this.remove(model);
+		}
+
+		this.commit();
+	},
+
+	commit: function (silent) {
+		this.removed = [];
+
+		var changedModels = this.GetChangedModelsAll();
+		var count = changedModels.length;
+
+		for (var i = 0; i < count; i++) {
+			var model = changedModels[i];
+			model.commit(silent);
+		}
+	},
+
+	MergeModels: function (models) {
+		for (var i = 0; i < models.length; i++) {
+			this.MergeModel(models[i]);
+		}
+	},
+
+	MergeModel: function (model) {
+		var _deleted = model.get('_deleted');
+		var original = this.getById(model.getId());
+		if (_deleted) { //removed node
+			if (original) {
+				this.deleteRecord(original);
+			}
+			return true;
+		}
+
+		if (!original) {  //new node
+			this.add(model);
+			return true;
+		}
+
+		//updated node
+		original.beginEdit();
+		original.Merge(model);
+		original.endEdit(true);
+		original.commit();
+		return true;
+	},
+
+	//nat method: original remove method put the record in the removed array and sync
+	//this method is used in timestamp refreshing
+	deleteRecord: function(record) {
+		var index = this.data.indexOf(record);
+		if (this.snapshot) {
+			this.snapshot.remove(record);
+		}
+		record.unjoin(this);
+		this.data.remove(record);
+		this.remove(record);
+		this.fireEvent('remove', this, record, index);
+		this.fireEvent('datachanged', this);
+	},
+
+	createNew: function(model, config){
+		model = app.natCreateModel(model || this.model, config);
+		this.add(model);
+		this.Select(model);
+		return model;
+	},
+
+	removeCurrent: function(){
+		if (!this.currModel) return;
+		this.remove(this.currModel);
+		this.updateCurrModel();
+	},
+
+	removeAll: function(silent) {
+		this.callParent(arguments);
+		this.Select(null);
+	},
+
+	filterNew: function(item) {
+		return (item.isNew() && item.isNATValid);
+	},
+	filterNewAll: function(item) {
+		return item.isNew();
+	},
+	filterUpdated: function(item) {
+		return (!item.isNew() && item.isNATDirty && item.isNATValid);
+	},
+	filterUpdatedAll: function(item) {
+		return (!item.isNew() && item.isNATDirty);
+	},
+
+	GetChangedModels: function () {
+		return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
+	},
+	GetChangedModelsAll: function () {
+		return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
+	},
+
+	IsChanged: function () {
+		return (this.GetChangedModelsAll().length != 0);
+	},
+
+	ValidateChangedModels: function(op, callback, scope) {
+		async.forEach(this.GetChangedModelsAll(), function(model, done) {
+			model.ValidateModel(null, done, model);
+		},
+		function(err){
+			Ext.callback(callback, scope, [err, null], 0);
+		});
+	},
+
+	//model calls it from callStore
+	OnModelDirtyChanged: function (model){
+		this.fireEvent('modeldirtychanged', model);
+	}
+});
+
+Ext.define('NAT.data.store.Query', {
+	extend: 'NAT.data.store.Abstract',
+	alias: 'widget.natquerystore',
+
+	requires: ['NAT.data.proxy.Ajax'],
+
+	constructor: function (config) {
+		config = config || {};
+		Ext.applyIf(config, {
+			model: config.queryModel,
+			collection: app.GetModelNameWithoutNamespace(config.queryModel),
+			api: {
+				read: app.baseUrl + 'data/read',
+				create: app.baseUrl + 'data/create',
+				update: app.baseUrl + 'data/update',
+				destroy: app.baseUrl + 'data/destroy'
+			},
+			mergeClientRecords: false
+		});
+		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
+
+		this.callParent([config]);
+	},
+
+	load: function (options, callback, scope) {
+		var me = this;
+
+		if (me.loading) {
+			Ext.callback(callback, scope, [null, null], 0);
+			return;
+		}
+
+		options = Ext.applyIf({
+			callback: callback,
+			scope: scope,
+			addRecords: 'merge'
+		}, options);
+
+		options.params = options.params || {};
+		options.params.lastModified = options.params.lastModified || new Date(0);
+		options.params.collection = options.params.collection || this.collection;
+
+		if (!options || !options.params || !options.params.collection){
+			Ext.callback(callback, scope, [{ message: message }, null], 0);
+			return;
+		}
+
+		return me.callParent([options]);
+	},
+
+	reload: function(options, callback, scope) {
+		return this.load(Ext.apply(this.lastOptions, options), callback, scope);
+	},
+
+	onProxyLoad: function(operation) {
+		var me = this,
+			resultSet = operation.getResultSet(),
+			records = operation.getRecords(),
+			successful = operation.wasSuccessful();
+
+		if (resultSet) {
+			me.totalCount = resultSet.total;
+		}
+
+		if (successful) {
+			me.loadRecords(records, operation);
+		}
+
+		me.loading = false;
+		if (me.hasListeners.load) {
+			me.fireEvent('load', me, records, successful);
+		}
+
+		//TODO: deprecate this event, it should always have been 'load' instead. 'load' is now documented, 'read' is not.
+		//People are definitely using this so can't deprecate safely until 2.x
+		if (me.hasListeners.read) {
+			me.fireEvent('read', me, records, successful);
+		}
+
+//IZS make callback result data compatible with async library
+//        Ext.callback(operation.callback, operation.scope || me, [records, operation, successful]);
+		Ext.callback(operation.callback, operation.scope || me, [null, {records: records, operation: operation, successful: successful}]);
+	},
+
+	loadRecords: function(records, options) {
+		var me     = this,
+			i      = 0,
+			length = records.length,
+			start,
+			addRecords,
+			snapshot = me.snapshot;
+
+		if (options) {
+			start = options.start;
+			addRecords = options.addRecords;
+		}
+
+		//IZS merge support lastModified
+		if (addRecords === false) {
+			delete me.snapshot;
+			me.clearData(true);
+			me.data.addAll(records);
+		}
+		else if (addRecords === true) {
+			if (snapshot) {
+				snapshot.addAll(records);
+			}
+			me.data.addAll(records);
+		}
+		else if (addRecords === 'merge'){
+			me.MergeModels(records);
+			for (i=0; i < records.length; i++) {
+				var model = records[i];
+				var _modified = model.get('_modified');
+				if (_modified > this.lastOptions.params.lastModified) {
+					this.lastOptions.params.lastModified = _modified;
+				}
+			}
+		}
+
+		if (start !== undefined) {
+			for (i=0; i < length; i++) {
+				records[i].index = start + i;
+				records[i].join(me);
+			}
+		} else {
+			for (i=0; i < length; i++) {
+				records[i].join(me);
+			}
+		}
+
+		/*
+		 * this rather inelegant suspension and resumption of events is required because both the filter and sort functions
+		 * fire an additional datachanged event, which is not wanted. Ideally we would do this a different way. The first
+		 * datachanged event is fired by the call to this.add, above.
+		 */
+		me.suspendEvents();
+
+		if (me.filterOnLoad && !me.remoteFilter) {
+			me.filter();
+		}
+
+		if (me.sortOnLoad && !me.remoteSort) {
+			me.sort(undefined, undefined, undefined, true);
+		}
+
+		me.resumeEvents();
+		me.fireEvent('datachanged', me);
+		me.fireEvent('refresh', me);
+	},
+
+	Merge: function(source) {
+		/*remove models that are not exist in source*/
+		var removed = [],
+			count = this.getCount();
+		for (var i = 0; i < count; i++) {
+			var model = this.getAt(i);
+			if (!source.getById(model.getId())) removed.push(model);
+		}
+		for (var j = 0; j < removed.length; j++) {
+			this.remove(removed[j]);
+		}
+
+		this.MergeModels(source.getRange(0));
+	},
+
+	MergeModels: function (models) {
+		for (var i = 0; i < models.length; i++) {
+			this.MergeModel(models[i]);
+		}
+	},
+
+	MergeModel: function (model) {
+		var _deleted = model.get('_deleted');
+		var original = this.getById(model.getId());
+		if (_deleted) { //removed node
+			if (original) {
+				this.deleteRecord(original);
+			}
+			return true;
+		}
+
+		if (!original) {  //new node
+			this.add(model);
+			return true;
+		}
+
+		//updated node
+		original.beginEdit();
+		original.Merge(model);
+		original.endEdit(true);
+		original.commit();
+		return true;
+	},
+
+	//nat method: original remove method put the record in the removed array and sync
+	//this method is used in timestamp refreshing
+	deleteRecord: function(record) {
+		var index = this.data.indexOf(record);
+		if (this.snapshot) {
+			this.snapshot.remove(record);
+		}
+		record.unjoin(this);
+		this.data.remove(record);
+		this.remove(record);
+		this.fireEvent('remove', this, record, index);
+		this.fireEvent('datachanged', this);
+	}
+});
+
+Ext.define('NAT.data.store.Request', {
+	extend: 'NAT.data.store.Abstract',
+	alias: 'widget.natrequeststore',
+
+	requires: ['NAT.data.proxy.Ajax'],
+
+	constructor: function (config) {
+		config = config || {};
+		Ext.applyIf(config, {
+			model: config.requestModel
+		});
+		this.proxy = Ext.create('NAT.data.proxy.Ajax');
+
+		this.callParent([config]);
+
+		this.add(app.natCreateModel(this.requestModel));
+	},
+
+	sendRequest: function(op, callback, scope) {
+		op = op || {};
+		Ext.applyIf(op, {
+			jsonData: this.currModel
+		});
+		this.proxy.NATRequest(op, callback, scope);
+	}
+});
+
+Ext.define('NAT.data.treestore.Abstract', {
+    extend: 'Ext.data.TreeStore',
+
+    currModel: null,
+
+    constructor: function (config) {
+        config = config || {};
+		this.callParent([config]);
+        this.on('move', this.OnMove, this);
+        this.on('datachanged', this.updateCurrModel, this);
+    },
+
+    OnMove: function (model, oldParent, newParent) {
+        if (oldParent != newParent) {
+            oldParent.updateInfo(false);
+        }
+        newParent.updateInfo(false);
+    },
+
+    setRootNode: function(root, /* private */ preventLoad) {
+        var me = this,
+            model = me.model,
+            idProperty = model.prototype.idProperty
+
+        root = root || {};
+        if (!root.isModel) {
+            // create a default rootNode and create internal data struct.
+            Ext.applyIf(root, {
+                id: me.defaultRootId,
+                text: 'Root',
+                allowDrag: false
+            });
+            if (root[idProperty] === undefined) {
+                root[idProperty] = me.defaultRootId;
+            }
+            Ext.data.NodeInterface.decorate(model);
+            root = Ext.ModelManager.create(root, model);
+        } else if (root.isModel && !root.isNode) {
+            Ext.data.NodeInterface.decorate(model);
         }
 
-        this.currModel = null;
+        //IZS: to force decoration in setRootNode, appendChild ect:
+        Ext.data.NodeInterface.decorate(root);
+        //IZS end
+
+
+        // Because we have decorated the model with new fields,
+        // we need to build new extactor functions on the reader.
+        me.getProxy().getReader().buildExtractors(true);
+
+        // When we add the root to the tree, it will automaticaly get the NodeInterface
+        me.tree.setRootNode(root);
+
+//IZS begin
+//        if (preventLoad !== true && !root.isLoaded() && (me.autoLoad === true || root.isExpanded())) {
+//            me.load({
+//                node: root
+//            });
+//        }
+
+        root.join(this);
+		this.Select(root, true);
+//IZS end
+
+        return root;
+    },
+
+    Select: function (model, suppressEvent) {
+		if (!model){
+			model = this.getRootNode();
+		}
+
+        if (this.currModel == model) return;
+
+        if (!suppressEvent) {
+            this.OnSelect(this.currModel, model);
+        }
+
+        this.currModel = model;
 
         if (!suppressEvent) {
             this.OnCurrentModelChanged();
@@ -5736,17 +6471,26 @@ Ext.define('NAT.data.Store', {
         return ((this.currModel) && (typeof this.currModel == 'object'));
     },
 
-    OnSelect: function(oldModel, newModel) {
+	getCurrModel: function() {
+		if (this.hasModel()){
+			return this.currModel;
+		}
+
+		this.updateCurrModel();
+
+		if (this.hasModel()){
+			return this.currModel;
+		}
+		return null;
+	},
+
+	updateCurrModel: function() {
+		if (this.currModel) return;
+		this.Select(null);
+	},
+
+	OnSelect: function(oldModel, newModel) {
         this.fireEvent('select', oldModel, newModel);
-    },
-
-    OnDeselect: function(oldModel) {
-        this.fireEvent('deselect', oldModel);
-    },
-
-    //model calls it from callStore
-    OnModelDirtyChanged: function (model){
-        this.fireEvent('modeldirtychanged', model);
     },
 
     OnCurrentModelChanged: function () {
@@ -5754,14 +6498,13 @@ Ext.define('NAT.data.Store', {
     }
 });
 
-Ext.define('NAT.data.TreeStore', {
-    extend: 'Ext.data.TreeStore',
-    alias: 'widget.nattreestore',
+Ext.define('NAT.data.treestore.Client', {
+    extend: 'NAT.data.treestore.Abstract',
+    alias: 'widget.natclienttreestore',
 
     requires: ['NAT.data.proxy.Ajax'],
 
     collection: null,
-    currModel: null,
     saving: false,
 
     constructor: function (config) {
@@ -5779,10 +6522,6 @@ Ext.define('NAT.data.TreeStore', {
         this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
         this.callParent([config]);
-
-        this.on('move', this.OnMove, this);
-
-        this.on('datachanged', this.onDataChanged, this);
     },
 
     getNewRecords: function() {
@@ -5796,10 +6535,6 @@ Ext.define('NAT.data.TreeStore', {
     },
     getUpdatedRecordsAll: function() {
         return Ext.Array.filter(this.tree.flatten(), this.filterUpdatedAll);
-    },
-
-    onDataChanged: function() {
-        this.updateCurrModel();
     },
 
     load: function (options, callback, scope) {
@@ -6163,12 +6898,511 @@ Ext.define('NAT.data.TreeStore', {
 		}
 	},
 
-    OnMove: function (model, oldParent, newParent) {
-        if (oldParent != newParent) {
-            oldParent.updateInfo(false);
+	createNew: function(model, config){
+		var parent = this.getCurrModel();
+		model = app.natCreateModel(model || this.model, Ext.apply(config, {loaded: true}));
+		parent.appendChild(model);
+		this.Select(model);
+		return model;
+	},
+
+	removeCurrent: function(){
+		if (!this.currModel) return;
+		this.remove(this.currModel);
+		this.updateCurrModel();
+	},
+
+	removeAll: function(silent) {
+		this.callParent(arguments);
+		this.Select(null);
+	},
+
+    setRootNode: function(root, /* private */ preventLoad) {
+        var me = this,
+            model = me.model,
+            idProperty = model.prototype.idProperty
+
+        root = root || {};
+        if (!root.isModel) {
+            // create a default rootNode and create internal data struct.
+            Ext.applyIf(root, {
+                id: me.defaultRootId,
+                text: 'Root',
+                allowDrag: false
+            });
+            if (root[idProperty] === undefined) {
+                root[idProperty] = me.defaultRootId;
+            }
+            Ext.data.NodeInterface.decorate(model);
+            root = Ext.ModelManager.create(root, model);
+        } else if (root.isModel && !root.isNode) {
+            Ext.data.NodeInterface.decorate(model);
         }
-        newParent.updateInfo(false);
+
+        //IZS: to force decoration in setRootNode, appendChild ect:
+        Ext.data.NodeInterface.decorate(root);
+        //IZS end
+
+
+        // Because we have decorated the model with new fields,
+        // we need to build new extactor functions on the reader.
+        me.getProxy().getReader().buildExtractors(true);
+
+        // When we add the root to the tree, it will automaticaly get the NodeInterface
+        me.tree.setRootNode(root);
+
+//IZS begin
+//        if (preventLoad !== true && !root.isLoaded() && (me.autoLoad === true || root.isExpanded())) {
+//            me.load({
+//                node: root
+//            });
+//        }
+
+        root.join(this);
+		this.Select(root, true);
+//IZS end
+
+        return root;
     },
+
+    filterNew: function(item) {
+        return (item.isNew() && item.isNATValid);
+    },
+    filterNewAll: function(item) {
+        return item.isNew();
+    },
+    filterUpdated: function(item) {
+        return (!item.isNew() && item.isNATDirty && item.isNATValid);
+    },
+    filterUpdatedAll: function(item) {
+        return (!item.isNew() && item.isNATDirty);
+    },
+
+    GetChangedModels: function () {
+        return Ext.Array.union(this.getNewRecords(), this.getUpdatedRecords(), this.getRemovedRecords());
+    },
+    GetChangedModelsAll: function () {
+        return Ext.Array.union(this.getNewRecordsAll(), this.getUpdatedRecordsAll(), this.getRemovedRecords());
+    },
+
+    IsChanged: function () {
+        return (this.GetChangedModelsAll().length != 0);
+    },
+
+    ValidateChangedModels: function(op, callback, scope) {
+        async.forEach(this.GetChangedModelsAll(), function(model, done) {
+            model.ValidateModel(null, done, model);
+        },
+        function(err){
+            Ext.callback(callback, scope, [err, null], 0);
+        });
+    },
+
+    //model calls it from callStore
+    OnModelDirtyChanged: function (model){
+        this.fireEvent('modeldirtychanged', model);
+    }
+});
+
+Ext.define('NAT.data.treestore.Persistent', {
+    extend: 'NAT.data.treestore.Abstract',
+    alias: 'widget.natpersistenttreestore',
+
+    requires: ['NAT.data.proxy.Ajax'],
+
+    saving: false,
+
+    constructor: function (config) {
+        config = config || {};
+        Ext.applyIf(config, {
+			model: config.persistentModel,
+			collection: app.GetModelNameWithoutNamespace(config.persistentModel),
+            api: {
+                read: app.baseUrl + 'data/read',
+                create: app.baseUrl + 'data/create',
+                update: app.baseUrl + 'data/update',
+                destroy: app.baseUrl + 'data/destroy'
+            },
+            mergeClientRecords: false
+        });
+        this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
+
+        this.callParent([config]);
+    },
+
+    getNewRecords: function() {
+        return Ext.Array.filter(this.tree.flatten(), this.filterNew);
+    },
+    getUpdatedRecords: function() {
+        return Ext.Array.filter(this.tree.flatten(), this.filterUpdated);
+    },
+    getNewRecordsAll: function() {
+        return Ext.Array.filter(this.tree.flatten(), this.filterNewAll);
+    },
+    getUpdatedRecordsAll: function() {
+        return Ext.Array.filter(this.tree.flatten(), this.filterUpdatedAll);
+    },
+
+    load: function (options, callback, scope) {
+        var me = this;
+
+        if (me.loading) {
+            Ext.callback(callback, scope, [null, null], 0);
+            return;
+        }
+
+        options = Ext.applyIf({
+            callback: callback,
+            scope: scope,
+            addRecords: 'merge'
+        }, options);
+
+        options.params = options.params || {};
+        options.params.lastModified = options.params.lastModified || new Date(0);
+        options.params.collection = options.params.collection || this.collection;
+
+        if (!options || !options.params || !options.params.collection){
+            Ext.callback(callback, scope, [{ message: 'options not valid' }, null], 0);
+            return;
+        }
+
+        //Ignore Ext.data.TreeStore load method
+        return this.superclass.superclass.load.call(this, options);
+    },
+
+    reload: function(options, callback, scope) {
+        return this.load(Ext.apply(this.lastOptions, options), callback, scope);
+    },
+
+    onProxyLoad: function (operation) {
+        var me = this,
+            successful = operation.wasSuccessful(),
+            records = operation.getRecords();
+
+        me.loading = false;
+        if (successful) {
+            var firstLoad = this.lastOptions.params.lastModified.getTime() == new Date(0).getTime();
+            if (firstLoad) {
+                this.BuildStore(records);
+            }
+            else {
+                this.MergeModels(records);
+            }
+
+            for (i=0; i < records.length; i++) {
+                var model = records[i];
+                var _modified = model.get('_modified');
+                if (_modified > this.lastOptions.params.lastModified) {
+                    this.lastOptions.params.lastModified = _modified;
+                }
+            }
+        }
+
+        me.fireEvent('read', me, operation.node, records, successful);
+        me.fireEvent('load', me, operation.node, records, successful);
+
+//IZS make callback result data compatible with async library
+//        Ext.callback(operation.callback, operation.scope || me, [records, operation, successful]);
+        Ext.callback(operation.callback, operation.scope || me, [null, {records: records, operation: operation, successful: successful}]);
+    },
+
+    save: function (op, callback, scope) {
+        if (this.saving) {
+            Ext.callback(callback, scope, [null, null], 0);
+            return;
+        }
+
+        this.saving = true;
+
+        var me = this;
+        async.waterfall([
+            function(cb){
+                me.ValidateChangedModels(null, cb, me);
+            },
+            function(result, cb){
+                var options = {
+                    scope: me,
+                    success: function(batch, options) {
+                        cb(null, options);
+                    },
+                    failure: function(batch, options) {
+                        cb('failure', options);
+                    }
+                };
+
+                me.sync(options);
+
+                if (!options.operations){
+                    cb(null, options);
+                    return;
+                }
+
+                if ((options.operations) && (!options.preventLoadingMask)) {
+                    app.ShowLoadingMask();
+                }
+            }
+        ],
+        function(err, options) {
+            me.saving = false;
+
+            if (err) {
+                alert("validation error, field: " + err.getAt(0).field);
+            }
+
+            options = options || {};
+            if ((options.operations) && (!options.preventLoadingMask)) {
+                app.HideLoadingMask();
+            }
+
+            Ext.callback(callback, scope, [null, options], 0);
+        });
+    },
+
+    //overridden!!! (Server sends the modified models back here)
+    onCreateRecords: function(records, operation, success) {
+        if (!success) return;
+
+        var sentRecords = operation.resultSet.records;
+
+        for (var i= 0; i < sentRecords.length; ++i) {
+            var record = sentRecords[i];
+            var original = operation.records[i];
+            if (original) {
+                this.tree.unregisterNode(original, false);
+                original.setId(record.getId());
+                this.tree.registerNode(original, false);
+            }
+        }
+    },
+
+    //overridden!!! (Server sends the modified models back here)
+    onUpdateRecords: function (records, operation, success) {
+    },
+
+    onDestroyRecords: function(records, operation, success){
+        if (success) {
+            this.removed = [];
+        }
+    },
+
+    remove: function (model, destroy) {
+        if (!model.parentNode) return;
+        model.parentNode.removeChild(model, destroy);
+    },
+
+    reject: function (silent) {
+        var changedModels = this.GetChangedModelsAll();
+        var count = changedModels.length;
+
+        for (var i = 0; i < count; i++) {
+            var model = changedModels[i];
+            if (model.get('loaded')) {
+                model.reject(silent);
+            }
+            else {
+                model.isReplace = true;
+                model.parentNode.removeChild(model);
+                model.isReplace = false;
+            }
+        }
+        this.commit();
+    },
+
+    commit: function (silent) {
+        var changedModels = this.GetChangedModelsAll();
+        var count = changedModels.length;
+
+        for (var i = 0; i < count; i++) {
+            var model = changedModels[i];
+            model.commit(silent);
+        }
+    },
+
+    BuildStore: function (models) {
+//        this.removeAll();
+
+        var result = this.GetChildByParentId(models, '');
+        if (result.length != 1) {
+            //alert('No Root!');
+            return;
+        }
+        var rootModel = result[0];
+        rootModel.beginEdit();
+        rootModel.set('loaded', true);  //for Extjs compatibility
+        this.setRootNode(rootModel);
+        rootModel.endEdit(true);
+        rootModel.commit();
+
+        this.BuildStoreReq(models, rootModel);
+
+        this.builded = true;
+    },
+
+    BuildStoreReq: function (models, parentNode) {
+        var children = this.GetChildByParentId(models, parentNode.getId());
+        if (children.length == 0) return;
+
+        children.sort(function (a, b) { return a.get('index') - b.get('index'); });
+
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+            child.beginEdit();
+            child.set('loaded', true);  //for Extjs compatibility
+            if (!child.get('_deleted')) {
+                parentNode.beginEdit();
+                parentNode.appendChild(child);
+                parentNode.endEdit(true);
+                parentNode.commit();
+                this.BuildStoreReq(models, child);
+            }
+            child.endEdit(true);
+            child.commit();
+        }
+    },
+
+    GetChildByParentId: function (models, parentId) {
+        var result = [];
+
+        for (var i = 0; i < models.length; i++) {
+            var model = models[i];
+            if (model.get('parentId') == parentId) {
+                result[result.length] = model;
+            }
+        }
+
+        return result;
+    },
+
+    MergeModels: function (models) {
+        models.sort(function (a, b) { return a.get('index') - b.get('index'); });
+        for (var i = 0; i < models.length; i++) {
+            models[i].merged = false;
+        }
+        var mergedModelsCount = this.GetMergedModelsCount(models);
+        while (mergedModelsCount < models.length) {
+            for (i = 0; i < models.length; i++) {
+                var model = models[i];
+                if (model.merged) continue;
+                if (this.MergeModel(model)) {
+                    model.merged = true;
+                }
+            }
+
+            var newMergedModelsCount = this.GetMergedModelsCount(models);
+            if (newMergedModelsCount == mergedModelsCount) break; //prevent infinite loop!
+            mergedModelsCount = newMergedModelsCount;
+        }
+    },
+
+    GetMergedModelsCount: function (models) {
+        var result = 0;
+        for (var i = 0; i < models.length; i++) {
+            if (models[i].merged) {
+                result += 1;
+            }
+        }
+        return result;
+    },
+
+    MergeModel: function (model) {
+        var parentId = model.get('parentId'),
+            index = model.get('index'),
+            _deleted = model.get('_deleted');
+
+        if (!parentId) { //root node
+            var root = this.getRootNode();
+            root.beginEdit();
+            Ext.apply(model.data, {
+                root: true,
+                isFirst: true,
+                isLast: true,
+                depth: 0,
+                expanded: root.get('expanded'),
+                loaded: true //for Extjs compatibility
+            });
+            root.Merge(model);
+            root.endEdit(true);
+            root.commit();
+            return true;
+        }
+
+        var parent = this.tree.getNodeById(parentId);
+        if (!parent) return false; //merge the parent first
+
+        var nodeBefore = parent.getChildAt(index);
+
+        var original = this.tree.getNodeById(model.getId());
+        if (_deleted) { //removed node
+            if (original) {
+                original.isReplace = true; //prevent being added to the removed cache
+                original.parentNode.removeChild(original);
+                original.isReplace = false;
+            }
+            return true;
+        }
+
+        if (!original) {  //new node
+            Ext.data.NodeInterface.decorate(model);
+			model.beginEdit();
+            parent.insertBefore(model, nodeBefore);
+            parent.updateInfo(false); //it updates children's indexes recursively
+			model.set('loaded', true); //for Extjs compatibility
+			model.endEdit(true);
+			model.commit();
+            return true;
+        }
+
+        //updated node
+        if ((original.get('parentId') == parentId) &&
+            (original.get('index') == index)) {
+            original.beginEdit();
+            Ext.apply(model.data, {
+                root: false,
+                isFirst: original.get('isFirst'),
+                isLast: original.get('isLast'),
+                depth: original.get('depth'),
+                expanded: original.get('expanded'),
+                loaded: true //for Extjs compatibility
+            });
+            original.Merge(model);
+            original.endEdit(true);
+            original.commit();
+            return true;
+        }
+
+        //updated node changed parent or index
+        original.beginEdit();
+        original.isReplace = true; //prevent being added to the removed cache
+        original.parentNode.removeChild(original);
+        original.isReplace = false;
+
+        Ext.apply(model.data, {
+            loaded: true //for Extjs compatibility
+        });
+        original.Merge(model);
+
+        parent.insertBefore(original, nodeBefore);
+        parent.updateInfo(false); //it updates children's indexes recursively
+
+        original.endEdit(true);
+        original.commit();
+
+        return true;
+    },
+
+	//not push new records into removed[]
+	onNodeRemove: function(parent, node, isMove) {
+		var me = this,
+			removed = me.removed;
+
+		if (!node.isReplace && Ext.Array.indexOf(removed, node) == -1) {
+			if (!node.isNew()) removed.push(node);
+		}
+
+		if (me.autoSync && !me.autoSyncSuspended && !isMove) {
+			me.sync();
+		}
+	},
 
 	createNew: function(model, config){
 		var parent = this.getCurrModel();
@@ -6270,124 +7504,9 @@ Ext.define('NAT.data.TreeStore', {
         });
     },
 
-    Select: function (model, suppressEvent) {
-		if (!model){
-			model = this.getRootNode();
-		}
-
-        if (this.currModel == model) return;
-
-        if (!suppressEvent) {
-            this.OnSelect(this.currModel, model);
-        }
-
-        this.currModel = model;
-
-        if (!suppressEvent) {
-            this.OnCurrentModelChanged();
-        }
-    },
-
-    Deselect: function (suppressEvent) {
-        if (this.loading) return;
-        if (this.currModel == null) return;
-
-        if (!suppressEvent) {
-            this.OnDeselect(this.currModel);
-        }
-
-        this.currModel = null;
-
-        if (!suppressEvent) {
-            this.OnCurrentModelChanged();
-        }
-    },
-
-    hasModel: function() {
-        return ((this.currModel) && (typeof this.currModel == 'object'));
-    },
-
-	getCurrModel: function() {
-		if (this.hasModel()){
-			return this.currModel;
-		}
-
-		this.updateCurrModel();
-
-		if (this.hasModel()){
-			return this.currModel;
-		}
-		return null;
-	},
-
-	updateCurrModel: function() {
-		if (this.currModel) return;
-		this.Select(null);
-	},
-
-	OnSelect: function(oldModel, newModel) {
-        this.fireEvent('select', oldModel, newModel);
-    },
-
-    OnDeselect: function(oldModel) {
-        this.fireEvent('deselect', oldModel);
-    },
-
     //model calls it from callStore
     OnModelDirtyChanged: function (model){
         this.fireEvent('modeldirtychanged', model);
-    },
-
-    OnCurrentModelChanged: function () {
-        this.fireEvent('currentmodelchanged', this.currModel);
-    }
-});
-
-Ext.define('NAT.data.StoreManager', {
-    extend: 'Ext.util.MixedCollection',
-    alias: 'widget.natstoremanager',
-
-    constructor: function (config) {
-        this.callParent([config]);
-    },
-
-    Init: function () {
-    },
-
-    Activate: function(storeName) {
-        var store = this.getByKey(storeName);
-        store.active = true;
-    },
-
-    Deactivate: function(storeName) {
-        var store = this.getByKey(storeName);
-        store.active = false;
-    },
-
-    load: function (op, callback, scope) {
-        async.forEach(this.items, function(store, done){
-            if (store.active) {
-                store.load(null, done);
-            } else {
-                done(null, null);
-            }
-        },
-        function(err, data) {
-            Ext.callback(callback, scope, [err, null], 0);
-        });
-    },
-
-    reload: function (op, callback, scope) {
-        async.forEach(this.items, function(store, done){
-            if (store.active) {
-                store.reload(null, done);
-            } else {
-                done(null, null);
-            }
-        },
-        function(err, data) {
-            Ext.callback(callback, scope, [err, null], 0);
-        });
     }
 });
 
