@@ -117,23 +117,19 @@ Ext.define('NAT.tree.Panel', {
     requires: ['NAT.tree.plugin.CellEditing'],
 
     animate: false,
-	dataStore: null,
-	dataMember: null,
 
-    constructor: function (config) {
-        this.callParent([config]);
-        return this;
-    },
+	mixins: {
+		databindable: 'NAT.data.binding.Bindable'
+	},
 
     initComponent: function () {
 //            this.viewConfig = Ext.applyIf(this.viewConfig || {}, {
 //                loadMask: false //if true after refreshing the store grid rows cant be selected
 //            });
 
-        this.callParent(arguments);
+        this.callParent(arguments); //use empty store from Ext.data.StoreManager
 
 		if (this.designMode) return;
-
 
 		this.on('afterrender', this.this_afterRender, this, {single: true});
 		this.on('select', this.tree_select, this);
@@ -141,47 +137,7 @@ Ext.define('NAT.tree.Panel', {
     },
 
 	this_afterRender: function(){
-		var dataStore = this.dataStore;
-		var dataMember = this.dataMember;
-		this.dataStore = null;
-		this.dataMember = null;
-		this.bindDataSource(dataStore, dataMember);
-	},
-
-	bindDataSource: function(dataStore, dataMember) {
-		if (dataStore == this.dataStore && dataMember == dataMember) return;
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		this.dataStore = dataStore;
-		this.dataMember = dataMember;
-
-		if (Ext.isString(this.dataStore)){
-			//local store?
-			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
-			if (natpanel){
-				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
-			}
-			//global store?
-			if (Ext.isString(this.dataStore)){
-				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
-			}
-		}
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		if (this.dataStore && !this.dataMember) {
-			this.superclass.bindStore.call(this, this.dataStore);
-		}
-	},
-
-	dataStore_currentmodelchanged: function(currModel){
-		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
-		this.superclass.bindStore.call(this, store);
+		this.mixins.databindable.initDataBindingBindable.call(this);
 	},
 
 	bindStore: function(store) {
@@ -1302,8 +1258,9 @@ Ext.define('NAT.form.field.Lookup', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.natlookupfield',
 
-	dataStore: null,
-	dataMember: null,
+	mixins: {
+		databindable: 'NAT.data.binding.Bindable'
+	},
 
 	validateOnChange: false,
     validateOnBlur: false,
@@ -1336,47 +1293,7 @@ Ext.define('NAT.form.field.Lookup', {
     },
 
 	this_afterRender: function(){
-		var dataStore = this.dataStore;
-		var dataMember = this.dataMember;
-		this.dataStore = null;
-		this.dataMember = null;
-		this.bindDataSource(dataStore, dataMember);
-	},
-
-	bindDataSource: function(dataStore, dataMember) {
-		if (dataStore == this.dataStore && dataMember == dataMember) return;
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		this.dataStore = dataStore;
-		this.dataMember = dataMember;
-
-		if (Ext.isString(this.dataStore)){
-			//local store?
-			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
-			if (natpanel){
-				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
-			}
-			//global store?
-			if (Ext.isString(this.dataStore)){
-				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
-			}
-		}
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		if (this.dataStore && !this.dataMember) {
-			this.superclass.bindStore.call(this, this.dataStore);
-		}
-	},
-
-	dataStore_currentmodelchanged: function(currModel){
-		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
-		this.superclass.bindStore.call(this, store);
+		this.mixins.databindable.initDataBindingBindable.call(this);
 	},
 
 	this_beforequery: function() {
@@ -1837,12 +1754,12 @@ Ext.define('NAT.form.Panel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.natform',
 
-    store: null,		//current store
-	dataStore: null,
-	dataMember: null,
+	mixins: {
+		databindable: 'NAT.data.binding.Bindable'
+	},
 
+	store: null,		//current store
     children: [],
-
     isChanging: false,
 
     initComponent: function () {
@@ -1855,47 +1772,7 @@ Ext.define('NAT.form.Panel', {
     },
 
 	this_afterRender: function(){
-		var dataStore = this.dataStore;
-		var dataMember = this.dataMember;
-		this.dataStore = null;
-		this.dataMember = null;
-		this.bindDataSource(dataStore, dataMember);
-	},
-
-	bindDataSource: function(dataStore, dataMember) {
-		if (dataStore == this.dataStore && dataMember == dataMember) return;
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		this.dataStore = dataStore;
-		this.dataMember = dataMember;
-
-		if (Ext.isString(this.dataStore)){
-			//local store?
-			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
-			if (natpanel){
-				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
-			}
-			//global store?
-			if (Ext.isString(this.dataStore)){
-				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
-			}
-		}
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		if (this.dataStore && !this.dataMember) {
-			this.bindStore.call(this, this.dataStore);
-		}
-	},
-
-	dataStore_currentmodelchanged: function(currModel){
-		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
-		this.bindStore.call(this, store);
+		this.mixins.databindable.initDataBindingBindable.call(this);
 	},
 
 	bindStore: function(store) {
@@ -2221,8 +2098,9 @@ Ext.define('NAT.grid.Panel', {
     alias: 'widget.natgrid',
     requires: ['Ext.grid.plugin.CellEditing'],
 
-    dataStore: null,
-    dataMember: null,
+	mixins: {
+		databindable: 'NAT.data.binding.Bindable'
+	},
 
     initComponent: function () {
         this.viewConfig = Ext.applyIf(this.viewConfig || {}, {
@@ -2231,7 +2109,7 @@ Ext.define('NAT.grid.Panel', {
 
         this.callParent(arguments); //use empty store from Ext.data.StoreManager
 
-        if (this.designMode) return;
+		if (this.designMode) return;
 
         this.on('afterrender', this.this_afterRender, this, {single: true});
         this.on('select', this.this_select, this);
@@ -2239,47 +2117,7 @@ Ext.define('NAT.grid.Panel', {
     },
 
     this_afterRender: function(){
-		var dataStore = this.dataStore;
-		var dataMember = this.dataMember;
-		this.dataStore = null;
-		this.dataMember = null;
-		this.bindDataSource(dataStore, dataMember);
-    },
-
-	bindDataSource: function(dataStore, dataMember) {
-        if (dataStore == this.dataStore && dataMember == dataMember) return;
-
-        if (this.dataStore && this.dataMember) {
-            this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-        }
-
-        this.dataStore = dataStore;
-        this.dataMember = dataMember;
-
-		if (Ext.isString(this.dataStore)){
-			//local store?
-			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
-			if (natpanel){
-				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
-			}
-			//global store?
-			if (Ext.isString(this.dataStore)){
-				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
-			}
-		}
-
-        if (this.dataStore && this.dataMember) {
-            this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-        }
-
-        if (this.dataStore && !this.dataMember) {
-			this.superclass.bindStore.call(this, this.dataStore);
-        }
-    },
-
-    dataStore_currentmodelchanged: function(currModel){
-        var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
-        this.superclass.bindStore.call(this, store);
+		this.mixins.databindable.initDataBindingBindable.call(this);
     },
 
     this_select: function (rowModel, model) {
@@ -4218,163 +4056,33 @@ Ext.define('natjs.overrides.String', {
     };
 });
 
-/**
-* This is the description for my class.
-*
-* @class NAT.panel.Panel
-* @constructor
-*/
 Ext.define('NAT.panel.Panel', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.natpanel',
 
-	/**
-	* My property description.  Like other pieces of your comment blocks, 
-	* this can span multiple lines.
-	* 
-	* @property stores
-	* @type {Array}
-	* @default "[]"
-	*/
-	//stores: [],
-	
+	mixins: {
+		databindingcontainer: 'NAT.data.binding.Container'
+	},
+
     initComponent: function(){
         //before callParent bc it creates items (like grid) that needs stores created
-        if (!this.designMode){
-            this.initStores();
-        }
+		this.mixins.databindingcontainer.initDataBindingContainer.call(this);
         this.callParent(arguments);
-    },
-
-    initStores : function() {
-        var me = this,
-            stores = me.stores || [];
-
-        me.stores = new Ext.util.AbstractMixedCollection();
-
-        for (var i=0; stores.length>i; i++){
-            var store = stores[i];
-            var xtype = store.xtype;
-            delete store.xtype;
-            store = Ext.create('widget.' + xtype, store);
-            me.stores.add(store.itemId, store);
-        }
-    },
-
-	getStore: function(itemId){
-		return this.stores.getByKey(itemId);
-	},
-
-	load: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.load(null, done, me);
-		},
-		function(data, err){
-			me.RefreshUI();
-			Ext.callback(callback, scope, [err, null], 0);
-		})
-	},
-
-	reload: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.reload(null, done, me);
-		},
-		function(data, err){
-			Ext.callback(callback, scope, [err, null], 0);
-		})
-	},
-
-	reject: function(){
-		this.stores.each(function(store){
-			store.reject();
-		}, this)
-	},
-
-	save: function (op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.save(null, done, me);
-		},
-		function(data, err){
-			Ext.callback(callback, scope, [err, null], 0);
-		})
-	}
+    }
 });
 
-/**
- * This is the description for my class.
- *
- * @class NAT.panel.Panel
- * @constructor
- */
 Ext.define('NAT.tab.Panel', {
 	extend: 'Ext.tab.Panel',
 	alias: 'widget.nattabpanel',
 
+	mixins: {
+		databindingcontainer: 'NAT.data.binding.Container'
+	},
+
 	initComponent: function(){
 		//before callParent bc it creates items (like grid) that needs stores created
-		if (!this.designMode){
-			this.initStores();
-		}
+		this.mixins.databindingcontainer.initDataBindingContainer.call(this);
 		this.callParent(arguments);
-	},
-
-	initStores : function() {
-		var me = this,
-			stores = me.stores || [];
-
-		me.stores = new Ext.util.AbstractMixedCollection();
-
-		for (var i=0; stores.length>i; i++){
-			var store = stores[i];
-			var xtype = store.xtype;
-			delete store.xtype;
-			store = Ext.create('widget.' + xtype, store);
-			me.stores.add(store.itemId, store);
-		}
-	},
-
-	getStore: function(itemId){
-		return this.stores.getByKey(itemId);
-	},
-
-	load: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.load(null, done, me);
-		},
-		function(data, err){
-			me.RefreshUI();
-			Ext.callback(callback, scope, [err, null], 0);
-		})
-	},
-
-	reload: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.reload(null, done, me);
-		},
-		function(data, err){
-			Ext.callback(callback, scope, [err, null], 0);
-		})
-	},
-
-	reject: function(){
-		this.stores.each(function(store){
-			store.reject();
-		}, this)
-	},
-
-	save: function (op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.save(null, done, me);
-		},
-		function(data, err){
-			Ext.callback(callback, scope, [err, null], 0);
-		})
 	}
 });
 
@@ -4383,68 +4091,22 @@ Ext.define('NAT.toolbar.Command', {
     alias: 'widget.natcommandtoolbar',
 
     mixins: {
-        bindable: 'Ext.util.Bindable'
-    },
-
-    dataStore: null,
-    dataMember: null,
+        bindable: 'Ext.util.Bindable',
+		databindable: 'NAT.data.binding.Bindable'
+	},
 
     initComponent : function(){
-        var me = this;
-
-        this.dataStore = this.store;
-        this.store = null;
-
         this.callParent(arguments);
 
         if (this.designMode) return;
 
         this.on('afterrender', this.this_afterRender, this, {single: true});
-
         this.down('#btnNew').on('click', this.btnNew_click, this);
         this.down('#btnDelete').on('click', this.btnDelete_click, this);
     },
 
     this_afterRender: function(){
-        var dataStore = this.dataStore;
-        this.dataStore = null;
-        this.bindStore(dataStore, this.dataMember);
-    },
-
-    bindStore: function(dataStore, dataMember) {
-        if (dataStore == this.dataStore && dataMember == dataMember) return;
-
-        if (this.dataStore && this.dataMember) {
-            this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-        }
-
-        this.dataStore = dataStore;
-        this.dataMember = dataMember;
-
-        if (Ext.isString(this.dataStore)){
-            //local store?
-			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
-            if (natpanel){
-                this.dataStore = natpanel.stores.getByKey(this.dataStore);
-            }
-            //global store?
-            if (!this.dataStore){
-                this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
-            }
-        }
-
-        if (this.dataStore && this.dataMember) {
-            this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-        }
-
-        if (this.dataStore && !this.dataMember) {
-			this.mixins.bindable.bindStore.call(this, this.dataStore);
-        }
-    },
-
-    dataStore_currentmodelchanged: function(currModel){
-        var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
-        this.mixins.bindable.bindStore.call(this, store);
+		this.mixins.databindable.initDataBindingBindable.call(this);
     },
 
     btnNew_click: function() {
@@ -4474,8 +4136,11 @@ Ext.define('NAT.window.Window', {
     extend: 'Ext.window.Window',
     alias: 'widget.natwindow',
 
+	mixins: {
+		databindingcontainer: 'NAT.data.binding.Container'
+	},
+
 	shown: false,
-	//stores: [],
 
 	op: null,
 	callback: null,
@@ -4484,9 +4149,7 @@ Ext.define('NAT.window.Window', {
 
     initComponent: function () {
 		//before callParent bc it creates items (like grid) that needs stores created
-		if (!this.designMode){
-			this.initStores();
-		}
+		this.mixins.databindingcontainer.initDataBindingContainer.call(this);
 		this.callParent(arguments);
 
         this.on('activate', this.this_activate, this);
@@ -4502,62 +4165,6 @@ Ext.define('NAT.window.Window', {
 
 	this_close: function() {
 		Ext.callback(this.callback, this.scope, [null, this.result], 0);
-	},
-
-	initStores : function() {
-		var me = this,
-			stores = me.stores || [];
-
-		me.stores = new Ext.util.AbstractMixedCollection();
-
-		for (var i=0; stores.length>i; i++){
-			var store = stores[i];
-			var xtype = store.xtype;
-			delete store.xtype;
-			store = Ext.create('widget.' + xtype, store);
-			me.stores.add(store.itemId, store);
-		}
-	},
-
-	getStore: function(itemId){
-		return this.stores.getByKey(itemId);
-	},
-
-	load: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.load(null, done, me);
-		},
-		function(data, err){
-			me.RefreshUI();
-			Ext.callback(callback, scope, [err, null], 0);
-		})
-	},
-
-	reload: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.reload(null, done, me);
-		},
-		function(data, err){
-			Ext.callback(callback, scope, [err, null], 0);
-		})
-	},
-
-	reject: function(){
-		this.stores.each(function(store){
-			store.reject();
-		}, this)
-	},
-
-	save: function (op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-			store.save(null, done, me);
-		},
-		function(data, err){
-			Ext.callback(callback, scope, [err, null], 0);
-		})
 	},
 
 	showModal: function (op, callback, scope) {
@@ -4585,6 +4192,127 @@ Ext.define('NAT.window.Window', {
             }
         }
     }
+});
+
+Ext.define('NAT.data.binding.Bindable', {
+
+	dataStore: null,
+	dataMember: null,
+
+	initDataBindingBindable: function(){
+		if (this.designMode) return;
+		var dataStore = this.dataStore;
+		var dataMember = this.dataMember;
+		this.dataStore = null;
+		this.dataMember = null;
+		this.bindDataSource(dataStore, dataMember);
+	},
+
+	bindDataSource: function(dataStore, dataMember) {
+		if (dataStore == this.dataStore && dataMember == dataMember) return;
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		this.dataStore = dataStore;
+		this.dataMember = dataMember;
+
+		if (Ext.isString(this.dataStore)){
+			//local store?
+			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
+			if (natpanel){
+				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
+			}
+			//global store?
+			if (Ext.isString(this.dataStore)){
+				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+			}
+		}
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		if (this.dataStore && !this.dataMember) {
+			this.bindStore.call(this, this.dataStore);
+		}
+	},
+
+	dataStore_currentmodelchanged: function(currModel){
+		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+		this.bindStore.call(this, store);
+	}
+});
+
+Ext.define('NAT.data.binding.BindableField', {
+
+	dataField: null
+
+});
+
+Ext.define('NAT.data.binding.Container', {
+
+	initDataBindingContainer: function() {
+		if (this.designMode) return;
+		this.initStores();
+	},
+
+	initStores : function() {
+		var me = this,
+			stores = me.stores || [];
+
+		me.stores = new Ext.util.AbstractMixedCollection();
+
+		for (var i=0; stores.length>i; i++){
+			var store = stores[i];
+			var xtype = store.xtype;
+			delete store.xtype;
+			store = Ext.create('widget.' + xtype, store);
+			me.stores.add(store.itemId, store);
+		}
+	},
+
+	getStore: function(itemId){
+		return this.stores.getByKey(itemId);
+	},
+
+	load: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.load(null, done, me);
+			},
+			function(data, err){
+				me.RefreshUI();
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reload: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.reload(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reject: function(){
+		this.stores.each(function(store){
+			store.reject();
+		}, this)
+	},
+
+	save: function (op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.save(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	}
 });
 
 Ext.define('NAT.data.model.Abstract', {
@@ -5318,7 +5046,7 @@ Ext.define('NAT.data.store.Client', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.clientModel
+			model: config.dataModel
 		});
 		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
@@ -5358,7 +5086,7 @@ Ext.define('NAT.data.store.Component', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.componentModel
+			model: config.dataModel
 		});
 		this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
@@ -5398,7 +5126,7 @@ Ext.define('NAT.data.store.Lookup', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.lookupModel,
+			model: config.dataModel,
 			api: {
 				read: app.baseUrl + 'lookup/read'
 			},
@@ -5425,9 +5153,9 @@ Ext.define('NAT.data.store.Lookup', {
 
 		options.params = options.params || {};
 		options.params.lastModified = options.params.lastModified || new Date(0);
-		options.params.lookupModel = app.GetModelNameWithoutNamespace(this.lookupModel);
+		options.params.dataModel = app.GetModelNameWithoutNamespace(this.dataModel);
 
-		if (!options || !options.params || !options.params.lookupModel){
+		if (!options || !options.params || !options.params.dataModel){
 			Ext.callback(callback, scope, [{ message: message }, null], 0);
 			return;
 		}
@@ -5606,7 +5334,7 @@ Ext.define('NAT.data.store.Persistent', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.persistentModel,
+			model: config.dataModel,
 			api: {
 				read: app.baseUrl + 'persistent/read',
 				create: app.baseUrl + 'persistent/create',
@@ -5636,9 +5364,9 @@ Ext.define('NAT.data.store.Persistent', {
 
 		options.params = options.params || {};
 		options.params.lastModified = options.params.lastModified || new Date(0);
-		options.params.persistentModel = app.GetModelNameWithoutNamespace(this.persistentModel);
+		options.params.dataModel = app.GetModelNameWithoutNamespace(this.dataModel);
 
-		if (!options || !options.params || !options.params.persistentModel){
+		if (!options || !options.params || !options.params.dataModel){
 			Ext.callback(callback, scope, [{ message: 'options not valid' }, null], 0);
 			return;
 		}
@@ -5949,7 +5677,7 @@ Ext.define('NAT.data.store.Query', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.queryModel,
+			model: config.dataModel,
 			api: {
 				read: app.baseUrl + 'query/read'
 			},
@@ -5976,9 +5704,9 @@ Ext.define('NAT.data.store.Query', {
 
 		options.params = options.params || {};
 		options.params.lastModified = options.params.lastModified || new Date(0);
-		options.params.queryModel = app.GetModelNameWithoutNamespace(this.queryModel);
+		options.params.dataModel = app.GetModelNameWithoutNamespace(this.dataModel);
 
-		if (!options || !options.params || !options.params.queryModel){
+		if (!options || !options.params || !options.params.dataModel){
 			Ext.callback(callback, scope, [{ message: message }, null], 0);
 			return;
 		}
@@ -6155,13 +5883,13 @@ Ext.define('NAT.data.store.Request', {
 	constructor: function (config) {
 		config = config || {};
 		Ext.applyIf(config, {
-			model: config.requestModel
+			model: config.dataModel
 		});
 		this.proxy = Ext.create('NAT.data.proxy.Ajax');
 
 		this.callParent([config]);
 
-		this.add(app.natCreateModel(this.requestModel));
+		this.add(app.natCreateModel(this.dataModel));
 	},
 
 	sendRequest: function(op, callback, scope) {
@@ -6345,7 +6073,7 @@ Ext.define('NAT.data.treestore.Client', {
     constructor: function (config) {
         config = config || {};
         Ext.applyIf(config, {
-			model: config.clientModel
+			model: config.dataModel
         });
         this.proxy = Ext.create('NAT.data.proxy.Ajax', config);
 
@@ -6388,7 +6116,7 @@ Ext.define('NAT.data.treestore.Persistent', {
     constructor: function (config) {
         config = config || {};
         Ext.applyIf(config, {
-			model: config.persistentModel,
+			model: config.dataModel,
             api: {
                 read: app.baseUrl + 'persistent/read',
                 create: app.baseUrl + 'persistent/create',
@@ -6418,9 +6146,9 @@ Ext.define('NAT.data.treestore.Persistent', {
 
         options.params = options.params || {};
         options.params.lastModified = options.params.lastModified || new Date(0);
-		options.params.persistentModel = app.GetModelNameWithoutNamespace(this.persistentModel);
+		options.params.dataModel = app.GetModelNameWithoutNamespace(this.dataModel);
 
-		if (!options || !options.params || !options.params.persistentModel){
+		if (!options || !options.params || !options.params.dataModel){
             Ext.callback(callback, scope, [{ message: 'options not valid' }, null], 0);
             return;
         }
