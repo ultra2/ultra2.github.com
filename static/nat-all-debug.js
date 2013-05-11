@@ -17,6 +17,127 @@ Ext.apply(Ext, {
 		return false;
 	}
 });
+Ext.define('NAT.data.binding.Bindable', {
+
+	dataStore: null,
+	dataMember: null,
+
+	initDataBindingBindable: function(){
+		if (this.designMode) return;
+		var dataStore = this.dataStore;
+		var dataMember = this.dataMember;
+		this.dataStore = null;
+		this.dataMember = null;
+		this.bindDataSource(dataStore, dataMember);
+	},
+
+	bindDataSource: function(dataStore, dataMember) {
+		if (dataStore == this.dataStore && dataMember == dataMember) return;
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		this.dataStore = dataStore;
+		this.dataMember = dataMember;
+
+		if (Ext.isString(this.dataStore)){
+			//local store?
+			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
+			if (natpanel){
+				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
+			}
+			//global store?
+			if (Ext.isString(this.dataStore)){
+				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
+			}
+		}
+
+		if (this.dataStore && this.dataMember) {
+			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
+		}
+
+		if (this.dataStore && !this.dataMember) {
+			this.bindStore.call(this, this.dataStore);
+		}
+	},
+
+	dataStore_currentmodelchanged: function(currModel){
+		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
+		this.bindStore.call(this, store);
+	}
+});
+
+Ext.define('NAT.data.binding.BindableField', {
+
+	dataField: null
+
+});
+
+Ext.define('NAT.data.binding.Container', {
+
+	initDataBindingContainer: function() {
+		if (this.designMode) return;
+		this.initStores();
+	},
+
+	initStores : function() {
+		var me = this,
+			stores = me.stores || [];
+
+		me.stores = new Ext.util.AbstractMixedCollection();
+
+		for (var i=0; stores.length>i; i++){
+			var store = stores[i];
+			var xtype = store.xtype;
+			delete store.xtype;
+			store = Ext.create('widget.' + xtype, store);
+			me.stores.add(store.itemId, store);
+		}
+	},
+
+	getStore: function(itemId){
+		return this.stores.getByKey(itemId);
+	},
+
+	load: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.load(null, done, me);
+			},
+			function(data, err){
+				me.RefreshUI();
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reload: function(op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.reload(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	},
+
+	reject: function(){
+		this.stores.each(function(store){
+			store.reject();
+		}, this)
+	},
+
+	save: function (op, callback, scope) {
+		var me = this;
+		async.forEach(me.stores.getRange(), function(store, done){
+				store.save(null, done, me);
+			},
+			function(data, err){
+				Ext.callback(callback, scope, [err, null], 0);
+			})
+	}
+});
+
 Ext.define('NAT.button.Button', {
     extend: 'Ext.button.Button',
     alias: 'widget.natbutton',
@@ -4205,127 +4326,6 @@ Ext.define('NAT.window.Window', {
             }
         }
     }
-});
-
-Ext.define('NAT.data.binding.Bindable', {
-
-	dataStore: null,
-	dataMember: null,
-
-	initDataBindingBindable: function(){
-		if (this.designMode) return;
-		var dataStore = this.dataStore;
-		var dataMember = this.dataMember;
-		this.dataStore = null;
-		this.dataMember = null;
-		this.bindDataSource(dataStore, dataMember);
-	},
-
-	bindDataSource: function(dataStore, dataMember) {
-		if (dataStore == this.dataStore && dataMember == dataMember) return;
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.un('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		this.dataStore = dataStore;
-		this.dataMember = dataMember;
-
-		if (Ext.isString(this.dataStore)){
-			//local store?
-			var natpanel = this.up('natpanel') || this.up('nattabpanel') || this.up('natwindow');
-			if (natpanel){
-				this.dataStore = natpanel.stores.getByKey(this.dataStore) || this.dataStore;
-			}
-			//global store?
-			if (Ext.isString(this.dataStore)){
-				this.dataStore = Ext.data.StoreManager.lookup(this.dataStore);
-			}
-		}
-
-		if (this.dataStore && this.dataMember) {
-			this.dataStore.on('currentmodelchanged', this.dataStore_currentmodelchanged, this);
-		}
-
-		if (this.dataStore && !this.dataMember) {
-			this.bindStore.call(this, this.dataStore);
-		}
-	},
-
-	dataStore_currentmodelchanged: function(currModel){
-		var store = (currModel) ? currModel['hasMany_' + this.dataMember] : Ext.data.StoreManager.lookup('ext-empty-store');
-		this.bindStore.call(this, store);
-	}
-});
-
-Ext.define('NAT.data.binding.BindableField', {
-
-	dataField: null
-
-});
-
-Ext.define('NAT.data.binding.Container', {
-
-	initDataBindingContainer: function() {
-		if (this.designMode) return;
-		this.initStores();
-	},
-
-	initStores : function() {
-		var me = this,
-			stores = me.stores || [];
-
-		me.stores = new Ext.util.AbstractMixedCollection();
-
-		for (var i=0; stores.length>i; i++){
-			var store = stores[i];
-			var xtype = store.xtype;
-			delete store.xtype;
-			store = Ext.create('widget.' + xtype, store);
-			me.stores.add(store.itemId, store);
-		}
-	},
-
-	getStore: function(itemId){
-		return this.stores.getByKey(itemId);
-	},
-
-	load: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-				store.load(null, done, me);
-			},
-			function(data, err){
-				me.RefreshUI();
-				Ext.callback(callback, scope, [err, null], 0);
-			})
-	},
-
-	reload: function(op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-				store.reload(null, done, me);
-			},
-			function(data, err){
-				Ext.callback(callback, scope, [err, null], 0);
-			})
-	},
-
-	reject: function(){
-		this.stores.each(function(store){
-			store.reject();
-		}, this)
-	},
-
-	save: function (op, callback, scope) {
-		var me = this;
-		async.forEach(me.stores.getRange(), function(store, done){
-				store.save(null, done, me);
-			},
-			function(data, err){
-				Ext.callback(callback, scope, [err, null], 0);
-			})
-	}
 });
 
 Ext.define('NAT.data.model.Abstract', {
