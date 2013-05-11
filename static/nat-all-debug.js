@@ -2169,11 +2169,63 @@ Ext.define('NAT.form.Panel', {
     }
 });
 
+Ext.define('NAT.grid.column.Boolean', {
+	extend: 'Ext.grid.column.Boolean',
+	alias: 'widget.natbooleancolumn',
+
+	mixins: {
+		databindablefield: 'NAT.data.binding.BindableField'
+	},
+
+	initComponent: function(){
+		this.callParent(arguments);
+	}
+});
+
+Ext.define('NAT.grid.column.Check', {
+    extend: 'Ext.grid.column.Column',
+    alias: 'widget.natcheckcolumn',
+
+	mixins: {
+		databindablefield: 'NAT.data.binding.BindableField'
+	},
+
+    renderer : function(value, metaData){
+        var cssPrefix = Ext.baseCSSPrefix,
+            cls = [cssPrefix + 'form-checkbox'];
+
+        if (value) {
+            metaData.tdCls = cssPrefix + 'form-cb-checked';
+        }
+
+        metaData.style = "text-align: -webkit-center;";
+
+        return '<input type="button" class="' + cls.join(' ') + '">';
+    }
+});
+
+Ext.define('NAT.grid.column.Date', {
+	extend: 'Ext.grid.column.Date',
+	alias: 'widget.natdatecolumn',
+
+	mixins: {
+		databindablefield: 'NAT.data.binding.BindableField'
+	},
+
+	initComponent: function(){
+		this.callParent(arguments);
+	}
+});
+
 Ext.define('NAT.grid.column.Lookup', {
     extend: 'Ext.grid.column.Column',
     alias: 'widget.natlookupcolumn',
 
-    initComponent: function(){
+	mixins: {
+		databindablefield: 'NAT.data.binding.BindableField'
+	},
+
+	initComponent: function(){
         this.callParent(arguments);
 
         if (!this.renderer) {
@@ -2192,6 +2244,32 @@ Ext.define('NAT.grid.column.Lookup', {
     }
 });
 
+Ext.define('NAT.grid.column.Number', {
+	extend: 'Ext.grid.column.Number',
+	alias: 'widget.natnumbercolumn',
+
+	mixins: {
+		databindablefield: 'NAT.data.binding.BindableField'
+	},
+
+	initComponent: function(){
+		this.callParent(arguments);
+	}
+});
+
+Ext.define('NAT.grid.column.Template', {
+	extend: 'Ext.grid.column.Template',
+	alias: 'widget.nattemplatecolumn',
+
+	mixins: {
+		databindablefield: 'NAT.data.binding.BindableField'
+	},
+
+	initComponent: function(){
+		this.callParent(arguments);
+	}
+});
+
 Ext.define('NAT.grid.column.Text', {
 	extend: 'Ext.grid.column.Column',
 	alias: 'widget.nattextcolumn',
@@ -2203,28 +2281,6 @@ Ext.define('NAT.grid.column.Text', {
 	initComponent: function(){
 		this.callParent(arguments);
 	}
-});
-
-Ext.define('NAT.grid.column.Check', {
-    extend: 'Ext.grid.column.Column',
-    alias: 'widget.natcheckcolumn',
-
-    constructor: function() {
-        this.callParent(arguments);
-    },
-
-    renderer : function(value, metaData){
-        var cssPrefix = Ext.baseCSSPrefix,
-            cls = [cssPrefix + 'form-checkbox'];
-
-        if (value) {
-            metaData.tdCls = cssPrefix + 'form-cb-checked';
-        }
-
-        metaData.style = "text-align: -webkit-center;";
-
-        return '<input type="button" class="' + cls.join(' ') + '">';
-    }
 });
 
 Ext.define('NAT.grid.Panel', {
