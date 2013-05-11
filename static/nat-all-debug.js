@@ -2071,6 +2071,19 @@ Ext.define('NAT.grid.column.Lookup', {
     }
 });
 
+Ext.define('NAT.grid.column.Text', {
+	extend: 'Ext.grid.column.Column',
+	alias: 'widget.nattextcolumn',
+
+	mixins: {
+		databindablefield: 'NAT.data.binding.BindableField'
+	},
+
+	initComponent: function(){
+		this.callParent(arguments);
+	}
+});
+
 Ext.define('NAT.grid.column.Check', {
     extend: 'Ext.grid.column.Column',
     alias: 'widget.natcheckcolumn',
